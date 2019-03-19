@@ -57,6 +57,7 @@ namespace Gateway
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.SeedDatabase();
             }
             else
             {

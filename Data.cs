@@ -6,7 +6,7 @@ namespace Gateway
 {
     public class Data
     {
-        private readonly IMongoDatabase _database = null;
+        public IMongoDatabase Database { get; }
 
         public Data(IConfiguration configuration)
         {
@@ -15,7 +15,7 @@ namespace Gateway
             var client = new MongoClient(connectionString);
             if (client != null)
             {
-                _database = client.GetDatabase(dbname);
+                Database = client.GetDatabase(dbname);
             }
             else
             {
@@ -23,7 +23,7 @@ namespace Gateway
             }
         }
 
-        public IMongoCollection<Account> Accounts => _database.GetCollection<Account>("Account");
+        public IMongoCollection<Account> Accounts => Database.GetCollection<Account>("Account");
 
     }
 }
