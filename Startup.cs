@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Gateway.Data;
-using Gateway.Mutation;
-using Gateway.Query;
+using Gateway.Queries;
+using Gateway.Types;
 using GraphiQl;
 using GraphQL;
+using GraphQL.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -31,12 +31,23 @@ namespace Gateway
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-            services.AddSingleton<IDocumentExecuter, DocumentExecuter>();
 
-            services.AddSingleton<EnvueData>();
-            services.AddSingleton<EnvueQuery>();
-            services.AddSingleton<EnvueMutation>();
-            services.AddSingleton<EnvueMutation>();
+            // Base
+            services.AddSingleton<IDependencyResolver>(s => new FuncDependencyResolver(s.GetRequiredService));
+            services.AddSingleton<IDocumentExecuter, DocumentExecuter>();
+            services.AddSingleton<IDocumentWriter, DocumentWriter>();
+            services.AddSingleton<Data>();
+            services.AddSingleton<Schema>();
+            services.AddSingleton<Query>();
+            services.AddSingleton<Mutation>();
+            
+            // Account
+            services.AddSingleton<AccountQuery>();
+            services.AddSingleton<AccountType>();
+
+            // Stream
+            services.AddSingleton<StreamQuery>();
+
             
         }
 

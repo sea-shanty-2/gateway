@@ -2,13 +2,13 @@ using Gateway.Models;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
-namespace Gateway.Data
+namespace Gateway
 {
-    public class EnvueData
+    public class Data
     {
         private readonly IMongoDatabase _database = null;
 
-        public EnvueData(IConfiguration configuration)
+        public Data(IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("Envue");
             var dbname = MongoUrl.Create(connectionString).DatabaseName;
@@ -23,13 +23,7 @@ namespace Gateway.Data
             }
         }
 
-        public IMongoCollection<User> Users
-        {
-            get
-            {
-                return _database.GetCollection<User>("User");
-            }
-        }
+        public IMongoCollection<Account> Accounts => _database.GetCollection<Account>("Account");
 
     }
 }
