@@ -8,6 +8,16 @@ namespace Gateway.Queries
     {
         public AccountQuery(Data data)
         {
+            FieldAsync<AccountType>(
+                "account",
+                arguments: new QueryArguments(
+                    new QueryArgument<IdGraphType> { Name = "id", Description = "The ID of the account." }),
+                resolve: async context => {
+                    var id = context.GetArgument<string>("id");
+                    return await data.Accounts.Find(x => x.Id == id).FirstOrDefaultAsync();
+                }
+            );
+
             FieldAsync<ListGraphType<AccountType>>(
                 "accounts",
                 resolve: async context => {

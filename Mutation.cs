@@ -1,4 +1,5 @@
 using Gateway.Models;
+using Gateway.Mutators;
 using Gateway.Types;
 using GraphQL.Types;
 
@@ -8,7 +9,7 @@ namespace Gateway
     {
         public Mutation()
         {
-            
+            Field<AccountMutation>("accountMutation", resolve: context => new {});
         }
     }
 }

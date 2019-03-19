@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Gateway.Mutators;
 using Gateway.Queries;
 using Gateway.Types;
 using GraphiQl;
@@ -42,6 +43,7 @@ namespace Gateway
             services.AddSingleton<Mutation>();
             
             // Account
+            services.AddSingleton<AccountMutation>();
             services.AddSingleton<AccountQuery>();
             services.AddSingleton<AccountType>();
 
