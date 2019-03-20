@@ -1,5 +1,8 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Gateway.Models;
 using Microsoft.Extensions.Configuration;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Gateway
@@ -23,7 +26,9 @@ namespace Gateway
             }
         }
 
-        public IMongoCollection<Account> Accounts => Database.GetCollection<Account>("Account");
-
+        public IMongoCollection<T> GetCollection<T>()
+        {
+            return Database.GetCollection<T>(typeof(T).Name);
+        }
     }
 }

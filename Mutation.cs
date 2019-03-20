@@ -10,6 +10,7 @@ namespace Gateway
         public Mutation()
         {
             Field<AccountMutation>("accountMutation", resolve: context => new {});
+            Field<BroadcastMutation>("broadcastMutation", resolve: context => new {});
         }
     }
 }

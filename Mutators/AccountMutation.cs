@@ -12,7 +12,7 @@ namespace Gateway.Mutators
                 "create",
                 resolve: context =>
                 {
-                    data.Accounts.InsertOne(new Account());
+                    data.GetCollection<Account>().InsertOne(new Account());
                     return true;
                 }
             );
@@ -24,7 +24,7 @@ namespace Gateway.Mutators
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    return (await data.Accounts.DeleteOneAsync(x => x.Id == id)).IsAcknowledged;
+                    return (await data.GetCollection<Account>().DeleteOneAsync(x => x.Id == id)).IsAcknowledged;
                 }
             );
         }

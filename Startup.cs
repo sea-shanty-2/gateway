@@ -8,6 +8,7 @@ using Gateway.Types;
 using GraphiQl;
 using GraphQL;
 using GraphQL.Http;
+using GraphQL.Types;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -41,14 +42,20 @@ namespace Gateway
             services.AddSingleton<Schema>();
             services.AddSingleton<Query>();
             services.AddSingleton<Mutation>();
+
+            // Generic
+
             
             // Account
             services.AddSingleton<AccountMutation>();
             services.AddSingleton<AccountQuery>();
             services.AddSingleton<AccountType>();
 
-            // Stream
-            services.AddSingleton<StreamQuery>();
+            // Broadcast
+            services.AddSingleton<BroadcastMutation>();
+            services.AddSingleton<BroadcastQuery>();
+            services.AddSingleton<BroadcastInputGraphType>();
+            services.AddSingleton<BroadcastGraphType>();
 
             
         }

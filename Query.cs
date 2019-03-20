@@ -8,7 +8,7 @@ namespace Gateway
         public Query()
         {
             Field<AccountQuery>("accountQuery", resolve: context => new {});
-            Field<StreamQuery>("streamQuery", resolve: context => new {});
+            Field<BroadcastQuery>("broadcastQuery", resolve: context => new {});
         }
     }
 }
