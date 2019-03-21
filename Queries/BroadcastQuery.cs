@@ -1,5 +1,7 @@
+using Gateway.Extensions;
 using Gateway.Models;
 using Gateway.Types;
+using GraphQL;
 using GraphQL.Types;
 using MongoDB.Driver;
 
@@ -9,12 +11,13 @@ namespace Gateway.Queries
     {
         public BroadcastQuery(Data data)
         {
-            FieldAsync<ListGraphType<BroadcastGraphType>>(
-                "broadcasts",
-                resolve: async context => {
-                    return await data.GetCollection<Broadcast>().Find(_ => true).ToListAsync();
-                }
-            );
+            Connection<BroadcastGraphType>()
+                .Name("broadcasts")
+                .Bidirectional()
+                .Resolve(context =>
+                {
+                    return context.GetPagedResults<object, Broadcast>(data.GetCollection<Broadcast>().Find(_ => true).ToEnumerable());
+                });
 
             FieldAsync<BroadcastGraphType>(
                 "broadcast",
@@ -25,6 +28,8 @@ namespace Gateway.Queries
                     return await data.GetCollection<Broadcast>().Find(x => x.Id == id).FirstOrDefaultAsync();
                 }
             );
+
+
         }
     }
 }

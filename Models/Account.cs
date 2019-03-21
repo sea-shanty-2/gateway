@@ -3,10 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Gateway.Models
 {
-    public class Account
+    public class Account : Entity
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
     }
 }

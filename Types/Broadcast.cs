@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Gateway.Models;
 using GraphQL.Language.AST;
 using GraphQL.Types;
+using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 
 namespace Gateway.Types

@@ -9,6 +9,7 @@ using GraphiQl;
 using GraphQL;
 using GraphQL.Http;
 using GraphQL.Types;
+using GraphQL.Types.Relay;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -43,9 +44,11 @@ namespace Gateway
             services.AddSingleton<Query>();
             services.AddSingleton<Mutation>();
 
-            // Generic
+            // Relay
+            services.AddTransient(typeof(ConnectionType<>));
+            services.AddTransient(typeof(EdgeType<>));
+            services.AddTransient<PageInfoType>();
 
-            
             // Account
             services.AddSingleton<AccountMutation>();
             services.AddSingleton<AccountQuery>();
@@ -57,7 +60,7 @@ namespace Gateway
             services.AddSingleton<BroadcastInputGraphType>();
             services.AddSingleton<BroadcastGraphType>();
 
-            
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

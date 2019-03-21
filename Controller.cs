@@ -1,6 +1,7 @@
 
 using System.Threading.Tasks;
 using GraphQL;
+using GraphQL.Conversion;
 using GraphQL.Types;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,17 +28,18 @@ namespace Gateway
 
             var result = await _documentExecutor.ExecuteAsync(_ =>
             {
+                _.UserContext = _resolver.Resolve<Data>();
                 _.Schema = _resolver.Resolve<Schema>();
                 _.Query = query.Query;
                 _.OperationName = query.OperationName;
                 _.Inputs = inputs;
+                _.FieldNameConverter = new CamelCaseFieldNameConverter();
             }).ConfigureAwait(false);
 
             if(result.Errors?.Count > 0)
             {
                 return BadRequest(result.Errors);
             }
-
             return Ok(result);
         }
     }
