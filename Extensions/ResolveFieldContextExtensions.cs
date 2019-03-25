@@ -1,16 +1,16 @@
-using Gateway.Interfaces;
 using GraphQL.Builders;
 using GraphQL.Types.Relay.DataObjects;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Gateway.Models;
 
 namespace Gateway.Extensions
 {
     public static class ResolveFieldContextExtensions
     {
-        public static Connection<U> GetPagedResults<T, U>(this ResolveConnectionContext<T> context, IEnumerable<U> data) where U : IEntity
+        public static Connection<U> GetPagedResults<U>(this ResolveConnectionContext<object> context, IEnumerable<U> data) where U : Entity
         {
             IEnumerable<U> items;
             var pageSize = context.PageSize ?? 20;
@@ -47,13 +47,16 @@ namespace Gateway.Extensions
                         .Take(context.Last ?? pageSize).ToList();
                 }
             }
-    
-            var endCursor = data.Count() > 0 ? items.Last().Id : null;
+
+            var totalCount = data.Count();
+            var endCursor = totalCount > 0 ? items.Last().Id : null;
+
+            items = items.ToList();
 
             return new Connection<U>
             {
                 Edges = items.Select(x => new Edge<U>() { Cursor = x.Id, Node = x }).ToList(),
-                TotalCount = data.Count(),
+                TotalCount = totalCount,
                 PageInfo = new PageInfo()
                 {
                     StartCursor = items.FirstOrDefault()?.Id,

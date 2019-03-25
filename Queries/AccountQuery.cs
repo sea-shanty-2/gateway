@@ -1,50 +1,39 @@
-using Gateway.Extensions;
 using Gateway.Models;
+using Gateway.Repositories;
 using Gateway.Types;
-using GraphQL;
 using GraphQL.Types;
-using MongoDB.Bson;
 using MongoDB.Driver;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Gateway.Extensions;
 
 namespace Gateway.Queries
 {
-    public class AccountQuery : ObjectGraphType
+    public class AccountQuery : ObjectGraphType<object>
     {
-        public AccountQuery()
+        public AccountQuery(IAccountRepository accounts)
         {
-            FieldAsync<AccountType>(
-                "account",
+
+            this.FieldAsync<AccountGraphType, Account>(
+                "single",
+                "Get an account by its unique identifier.",
                 arguments: new QueryArguments(
-                    new QueryArgument<IdGraphType> { Name = "id", Description = "The ID of the account." },
-                    new QueryArgument<StringGraphType> { Name = "name", Description = "The name of the account." }
-                ),
+                    new QueryArgument<NonNullGraphType<IdGraphType>>
+                    {
+                        Name = "id",
+                        Description = "The unique identifier of the account.",
+                    }),
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    return await context
-                        .UserContext
-                        .As<Data>()
-                        .GetCollection<Account>()
-                        .Find(x => x.Id == id)
-                        .FirstOrDefaultAsync();
-                }
-            );
+                    return await accounts.GetAsync(id, context.CancellationToken);
+                });
 
-            Connection<AccountType>()
-                .Name("accounts")
+            this.Connection<AccountGraphType>()
+                .Name("page")
+                .Description("Gets pages of accounts.")
                 .Bidirectional()
-                .Resolve(context =>
-                {
-                    var data = context
-                        .UserContext
-                        .As<Data>()
-                        .GetCollection<Account>()
-                        .Find(_ => true)
-                        .ToEnumerable();
-
-                    return context.GetPagedResults<object, Account>(data);
+                // Set the maximum size of a page, use .ReturnAll() to set no maximum size.
+                .Resolve(context => {
+                    return context.GetPagedResults<Account>(accounts.Get(context.CancellationToken));
                 });
         }
     }
