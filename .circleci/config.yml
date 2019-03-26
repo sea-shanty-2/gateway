@@ -5,6 +5,9 @@ jobs:
       - image: microsoft/dotnet:sdk
     steps:
       - checkout
+      
+      - run: npm install
+      - run: sudo npm install --global apollo
 
       - run: find .
       - run: dotnet restore
