@@ -6,10 +6,10 @@ jobs:
     steps:
       - checkout
       
-      - run: apt update
-      - run: apt-get install npm -y sudo
-      - run: npm install
-      - run: sudo npm install --global apollo
+      - run: apt-get update -yq && apt-get upgrade -yq && apt-get install -yq curl git nano
+      - run: curl -sL https://deb.nodesource.com/setup_8.x | bash - && apt-get install -yq nodejs build-essential
+      - run: npm i -g npm
+      - run: npm i -g apollo
 
       - run: find .
       - run: dotnet restore
@@ -21,5 +21,5 @@ jobs:
       - run: sleep 5
       - run: |
           if [ "${CIRCLE_BRANCH}" == "master" ]; then
-            apollo service:push --tag=master
+            apollo service:push --tag=master --endpoint=http://localhost:5000/graphql
           fi
