@@ -7,7 +7,7 @@ jobs:
       - checkout
       
       - run: apt update
-      - run: apt install npm -y sudo
+      - run: apt-get install npm -y sudo
       - run: npm install
       - run: sudo npm install --global apollo
 
