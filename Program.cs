@@ -63,7 +63,6 @@ namespace Gateway
                     })
                 // Used for IIS and IIS Express for in-process hosting. Use UseIISIntegration for out-of-process hosting.
                 .UseIIS()
-
                 .UseStartup<Startup>();
 
         private static IConfigurationBuilder AddConfiguration(

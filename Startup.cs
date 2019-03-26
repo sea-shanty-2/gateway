@@ -91,12 +91,16 @@ namespace Gateway
                 .UseGraphQLWebSockets<MainSchema>()
                 // Use the specified GraphQL schema and make them available at /graphql.
                 .UseGraphQL<MainSchema>()
-                .UseIf(
+                // Add the GraphQL Playground UI to try out the GraphQL API at /.
+                .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
+                // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
+                .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" });
+                /* .UseIf(
                     this.hostingEnvironment.IsDevelopment(),
                     x => x
                         // Add the GraphQL Playground UI to try out the GraphQL API at /.
                         .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
                         // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
-                        .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" }));
+                        .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" })); */
     }
 }
