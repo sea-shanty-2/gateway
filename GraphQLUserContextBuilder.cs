@@ -7,6 +7,9 @@ namespace Gateway
     public class GraphQLUserContextBuilder : IUserContextBuilder
     {
         public Task<object> BuildUserContext(HttpContext httpContext) =>
-            Task.FromResult<object>(new GraphQLUserContext() { User = httpContext.User });
+            Task.FromResult<object>(new GraphQLUserContext
+            {
+                User = httpContext.User
+            });
     }
 }

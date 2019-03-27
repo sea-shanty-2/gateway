@@ -75,8 +75,7 @@ namespace Gateway
         public void Configure(IApplicationBuilder application) =>
             application
                 // Pass a GUID in a X-Correlation-ID HTTP header to set the HttpContext.TraceIdentifier.
-                // UpdateTraceIdentifier must be false due to a bug. See https://github.com/aspnet/AspNetCore/issues/5144
-                .UseCorrelationId(new CorrelationIdOptions() { UpdateTraceIdentifier = false })
+                .UseCorrelationId(new CorrelationIdOptions())
                 .UseForwardedHeaders()
                 .UseResponseCompression()
                 .UseCors(CorsPolicyName.AllowAny)
@@ -98,12 +97,5 @@ namespace Gateway
                 .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
                 // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
                 .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" });
-        /* .UseIf(
-            this.hostingEnvironment.IsDevelopment(),
-            x => x
-                // Add the GraphQL Playground UI to try out the GraphQL API at /.
-                .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
-                // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
-                .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" })); */
     }
 }
