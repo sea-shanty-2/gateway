@@ -7,7 +7,6 @@ using Gateway.Models;
 using GraphQL;
 using Gateway.Repositories;
 using Gateway.Types;
-using Gateway.Extensions;
 
 namespace Gateway.Queries
 {
@@ -16,6 +15,7 @@ namespace Gateway.Queries
         public Query()
         {
             Field<AccountQuery>("accounts", resolve: ctx => new {});
+            Field<BroadcastQuery>("broadcasts", resolve: ctx => new {});
         }
 
     

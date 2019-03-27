@@ -3,13 +3,12 @@ using Gateway.Repositories;
 using Gateway.Types;
 using GraphQL.Types;
 using MongoDB.Driver;
-using Gateway.Extensions;
 
 namespace Gateway.Mutations
 {
     public class AccountMutation : ObjectGraphType<object>
     {
-        public AccountMutation(IAccountRepository accounts)
+        public AccountMutation(IRepository repository)
         {
 
             this.FieldAsync<AccountGraphType, Account>(
@@ -22,10 +21,10 @@ namespace Gateway.Mutations
                 resolve: async context =>
                 {
                     var account = context.GetArgument<Account>("account");
-                    return await accounts.CreateAsync(account, context.CancellationToken);
+                    return await repository.AddAsync(account, context.CancellationToken);
                 });
 
-            this.FieldAsync<AccountGraphType, Account>(
+            this.FieldAsync<AccountGraphType>(
                 "update",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
@@ -40,10 +39,10 @@ namespace Gateway.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var account = context.GetArgument<Account>("account");
-                    return await accounts.UpdateAsync(id, account, context.CancellationToken);
+                    return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
                 });
 
-            this.FieldAsync<AccountGraphType, Account>(
+            this.FieldAsync<StringGraphType>(
                 "delete",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
@@ -53,7 +52,8 @@ namespace Gateway.Mutations
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    return await accounts.DeleteAsync(id, context.CancellationToken);
+                    await repository.DeleteAsync<Account>(x => x.Id == id, context.CancellationToken);
+                    return id;
                 });
         }
     }

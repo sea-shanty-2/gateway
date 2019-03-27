@@ -2,6 +2,7 @@ namespace Gateway
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using GraphQL;
@@ -41,7 +42,15 @@ namespace Gateway
                 // Add instrumentation data showing how long field resolvers take to execute to the JSON response in
                 // Apollo Tracing format. Apollo Engine can use the Apollo Tracing data to produce nice charts showing this
                 // information. See https://www.apollographql.com/engine/
-                result.EnrichWithApolloTracing(DateTime.UtcNow);
+                if (
+                    result.Perf != null &&
+                    result.Perf.Any(x => x.Category == "operation") &&
+                    result.Perf.Any(x => x.Category == "document") &&
+                    result.Perf.Any(x => x.Category == "field"))
+                {
+                    result.EnrichWithApolloTracing(DateTime.UtcNow);
+                }
+
             }
 
             return result;

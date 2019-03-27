@@ -1,9 +1,12 @@
 namespace Gateway
 {
+    using Gateway.Data;
     using Gateway.Models;
     using Gateway.Repositories;
     using Gateway.Schemas;
+    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using MongoDB.Driver;
 
     /// <summary>
     /// <see cref="IServiceCollection"/> extension methods add project services.
@@ -20,7 +23,7 @@ namespace Gateway
         /// </summary>
         public static IServiceCollection AddProjectRepositories(this IServiceCollection services) =>
             services
-                .AddSingleton<IAccountRepository, AccountRepository>();
+                .AddSingleton<IRepository, Repository>();
 
         /// <summary>
         /// Add project GraphQL schema and web socket types.

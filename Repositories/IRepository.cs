@@ -1,19 +1,26 @@
 
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Gateway.Models;
+using GraphQL.Builders;
+using GraphQL.Types;
+using GraphQL.Types.Relay.DataObjects;
 
 namespace Gateway.Repositories
 {
-    public interface IRepository<T> where T : Entity
+    public interface IRepository
     {
-        Task<T> GetAsync(string id, CancellationToken cancellationToken);
-        IEnumerable<T> Get(CancellationToken cancellationToken);
-        Task<T> CreateAsync(T entity, CancellationToken cancellationToken);
-        Task<T> UpdateAsync(string id, T entity, CancellationToken cancellationToken);
-        Task<T> DeleteAsync(string id, CancellationToken cancellationToken);
-        Task<int> CountAsync(CancellationToken cancellationToken);
+        Task<T> AddAsync<T>(T item, CancellationToken cancellationToken = default) where T : Entity;
+        Task<IEnumerable<T>> AddAsync<T>(IEnumerable<T> items, CancellationToken cancellationToken = default) where T : Entity;
+        Task<T> SingleAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : Entity;
+        Task<IEnumerable<T>> ManyAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : Entity;
+        Task<IEnumerable<T>> UpdateAsync<T>(Expression<Func<T, bool>> expression, T item, CancellationToken cancellationToken = default) where T : Entity;
+        Task DeleteAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : Entity;
+        Connection<T> Connection<T, U>(Expression<Func<T, bool>> expression, ResolveConnectionContext<U> context) where T : Entity;
     }
 }

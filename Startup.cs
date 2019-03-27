@@ -14,6 +14,7 @@ namespace Gateway
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Gateway.Data;
 
     /// <summary>
     /// The main start-up class for the application.
@@ -60,6 +61,8 @@ namespace Gateway
                     .AddCustomMvcOptions(this.hostingEnvironment)
                 .Services
                 .AddCustomGraphQL(this.hostingEnvironment)
+                .AddIf(!this.hostingEnvironment.IsDevelopment(), x => x.AddSingleton<IDatabase, Database>())
+                .AddIf(this.hostingEnvironment.IsDevelopment(), x => x.AddSingleton<IDatabase, TestDatabase>())
                 .AddCustomGraphQLAuthorization()
                 .AddProjectRepositories()
                 .AddProjectSchemas()
@@ -95,12 +98,12 @@ namespace Gateway
                 .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
                 // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
                 .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" });
-                /* .UseIf(
-                    this.hostingEnvironment.IsDevelopment(),
-                    x => x
-                        // Add the GraphQL Playground UI to try out the GraphQL API at /.
-                        .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
-                        // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
-                        .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" })); */
+        /* .UseIf(
+            this.hostingEnvironment.IsDevelopment(),
+            x => x
+                // Add the GraphQL Playground UI to try out the GraphQL API at /.
+                .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
+                // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
+                .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" })); */
     }
 }
