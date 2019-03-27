@@ -35,22 +35,17 @@ namespace Gateway
             object context,
             CancellationToken cancellationToken = default)
         {
+            var start = DateTime.UtcNow;
             var result = await base.ExecuteAsync(operationName, query, variables, context, cancellationToken);
 
             if (this.options.EnableMetrics)
             {
-                // Add instrumentation data showing how long field resolvers take to execute to the JSON response in
-                // Apollo Tracing format. Apollo Engine can use the Apollo Tracing data to produce nice charts showing this
-                // information. See https://www.apollographql.com/engine/
-                if (
-                    result.Perf != null &&
-                    result.Perf.Any(x => x.Category == "operation") &&
-                    result.Perf.Any(x => x.Category == "document") &&
-                    result.Perf.Any(x => x.Category == "field"))
+                try
                 {
-                    result.EnrichWithApolloTracing(DateTime.UtcNow);
+                    result.EnrichWithApolloTracing(start);
                 }
-
+                catch (InvalidOperationException)
+                { }
             }
 
             return result;
