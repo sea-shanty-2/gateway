@@ -8,6 +8,7 @@ namespace Gateway.Mutations
         public Mutation()
         {
             Field<AccountMutation>("accounts", resolve: ctx => new {});
+            Field<BroadcastMutation>("broadcasts", resolve: ctx => new {});
         }
     }
 }

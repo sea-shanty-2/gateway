@@ -11,7 +11,7 @@ namespace Gateway.Queries
         public AccountQuery(IRepository repository)
         {
 
-            this.FieldAsync<AccountGraphType, Account>(
+            this.FieldAsync<AccountType, Account>(
                 "single",
                 "Get an account by its unique identifier.",
                 arguments: new QueryArguments(
@@ -26,7 +26,7 @@ namespace Gateway.Queries
                     return await repository.SingleAsync<Account>(x => x.Id == id);
                 });
 
-            this.Connection<AccountGraphType>()
+            this.Connection<AccountType>()
                 .Name("page")
                 .Description("Gets pages of accounts.")
                 .Bidirectional()

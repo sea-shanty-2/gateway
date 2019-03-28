@@ -4,17 +4,18 @@ using GraphQL.Types;
 
 namespace Gateway.Types
 {
-    public class BroadcastGraphType : ObjectGraphType<Broadcast>
+    public class BroadcastType : ObjectGraphType<Broadcast>
     {
-        public BroadcastGraphType(IRepository repository)
+        public BroadcastType(IRepository repository)
         {
-            Field(x => x.Id, type: typeof(NonNullGraphType<IdGraphType>));
+            Field(x => x.Id);
             Field(x => x.Title);
             Field(x => x.Tag);
+            Field(x => x.Location, type: typeof(LocationType));
             Field(x => x.Started, type: typeof(DateTimeGraphType));
             Field(x => x.Ended, type: typeof(DateTimeGraphType));
-            
-            FieldAsync<AccountGraphType>(
+
+            FieldAsync<AccountType>(
                 "broadcaster",
                 resolve: async context =>
                     await repository.SingleAsync<Account>(x => x.Id == context.Source.BroadcasterId, context.CancellationToken)
@@ -22,4 +23,29 @@ namespace Gateway.Types
         }
     }
 
+    public class BroadcastCreateType : ObjectGraphType<Broadcast>
+    {
+        public BroadcastCreateType()
+        {
+            Field(x => x.Id);
+            Field(x => x.Token);
+        }
+    }
+
+    public class BroadcastDeleteType : ObjectGraphType<Broadcast>
+    {
+        public BroadcastDeleteType()
+        {
+            Field(x => x.Id);
+        }
+    }
+
+    public class BroadcastUpdateType : ObjectGraphType<Broadcast>
+    {
+        public BroadcastUpdateType()
+        {
+            Field(x => x.Id);
+            Field(x => x.Title);
+        }
+    }
 }

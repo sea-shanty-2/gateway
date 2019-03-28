@@ -27,7 +27,6 @@ namespace Gateway.Data
                     {
                         Title = f.Lorem.Sentence(),
                         Tag = f.Lorem.Word(),
-                        Token = Guid.NewGuid().ToString(),
                         BroadcasterId = accounts.Skip(f.Random.Int(0, accounts.Count() - 1)).FirstOrDefault()?.Id,
                         Started = started,
                         Ended = started.AddMinutes(f.Random.Double(1, 360))

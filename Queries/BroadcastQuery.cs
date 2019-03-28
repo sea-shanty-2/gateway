@@ -11,7 +11,7 @@ namespace Gateway.Queries
         public BroadcastQuery(IRepository repository)
         {
 
-            FieldAsync<BroadcastGraphType, Broadcast>(
+            FieldAsync<BroadcastType>(
                 "single",
                 "Get an broadcast by its unique identifier.",
                 arguments: new QueryArguments(
@@ -26,7 +26,7 @@ namespace Gateway.Queries
                     return await repository.SingleAsync<Broadcast>(x => x.Id == id, context.CancellationToken);
                 });
 
-            Connection<BroadcastGraphType>()
+            Connection<BroadcastType>()
                 .Name("page")
                 .Description("Gets pages of broadcasts.")
                 .Bidirectional()

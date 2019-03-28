@@ -6,43 +6,45 @@ using MongoDB.Driver;
 
 namespace Gateway.Mutations
 {
-    public class AccountMutation : ObjectGraphType<object>
+    public class BroadcastMutation : ObjectGraphType<object>
     {
-        public AccountMutation(IRepository repository)
+        public BroadcastMutation(IRepository repository)
         {
 
-            this.FieldAsync<AccountType, Account>(
+            this.FieldAsync<BroadcastCreateType>(
                 "create",
                 arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<AccountInputType>>()
+                    new QueryArgument<NonNullGraphType<BroadcastInputType>>()
                     {
-                        Name = "account"
+                        Name = "broadcast"
                     }),
                 resolve: async context =>
                 {
-                    var account = context.GetArgument<Account>("account");
-                    return await repository.AddAsync(account, context.CancellationToken);
+                    var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    return await repository.AddAsync(broadcast, context.CancellationToken);
                 });
+            
 
-            this.FieldAsync<AccountType>(
+
+            this.FieldAsync<BroadcastUpdateType>(
                 "update",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
                     {
                         Name = "id"
                     },
-                    new QueryArgument<NonNullGraphType<AccountInputType>>()
+                    new QueryArgument<NonNullGraphType<BroadcastInputType>>()
                     {
-                        Name = "account"
+                        Name = "broadcast"
                     }),
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    var account = context.GetArgument<Account>("account");
-                    return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
+                    var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
                 });
-
-            this.FieldAsync<StringGraphType>(
+            
+            this.FieldAsync<BroadcastDeleteType>(
                 "delete",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
@@ -52,7 +54,7 @@ namespace Gateway.Mutations
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    await repository.DeleteAsync<Account>(x => x.Id == id, context.CancellationToken);
+                    await repository.DeleteAsync<Broadcast>(x => x.Id == id, context.CancellationToken);
                     return id;
                 });
         }
