@@ -98,19 +98,28 @@ namespace Gateway
                     x => x.UseHsts())
                 .UseIf(
                     this.hostingEnvironment.IsDevelopment(),
-                    x => x.UseDeveloperErrorPages())
+                    x => x
+                        .UseDeveloperErrorPages()
+                        // Add the GraphQL Playground UI to try out the GraphQL API
+                        .UseGraphQLPlayground(new GraphQLPlaygroundOptions()
+                        {
+                            Path = "/playground",
+                            GraphQLEndPoint = "/"
+                        })
+                        // Add the GraphQL Voyager UI to navigate the GraphQL API
+                        .UseGraphQLVoyager(new GraphQLVoyagerOptions()
+                        {
+                            Path = "/voyager",
+                            GraphQLEndPoint = "/"
+                        }))
                 .UseHealthChecks("/status")
                 .UseHealthChecks("/status/self", new HealthCheckOptions() { Predicate = _ => false })
                 .UseAuthentication()
                 .UseStaticFilesWithCacheControl()
                 .UseWebSockets()
-                // Use the GraphQL subscriptions in the specified schema and make them available at /graphql.
-                .UseGraphQLWebSockets<MainSchema>()
-                // Use the specified GraphQL schema and make them available at /graphql.
-                .UseGraphQL<MainSchema>()
-                // Add the GraphQL Playground UI to try out the GraphQL API at /.
-                .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/" })
-                // Add the GraphQL Voyager UI to let you navigate your GraphQL API as a spider graph at /voyager.
-                .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager" });
+                // Use the GraphQL subscriptions in the specified schema and make them available at /
+                .UseGraphQLWebSockets<MainSchema>("/")
+                // Use the specified GraphQL schema and make them available at /
+                .UseGraphQL<MainSchema>("/");
     }
 }
