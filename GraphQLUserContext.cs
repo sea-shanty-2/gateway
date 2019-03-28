@@ -2,6 +2,7 @@ namespace Gateway
 {
     using System.Security.Claims;
     using GraphQL.Authorization;
+    using Microsoft.AspNetCore.Http;
 
     /// <summary>
     /// The GraphQL user context for the current request. The user context is accessible in field resolvers and

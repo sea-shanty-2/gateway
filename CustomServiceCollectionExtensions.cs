@@ -44,20 +44,20 @@ namespace Gateway
                 // Adds IDistributedCache which is a distributed cache shared between multiple servers. This adds a
                 // default implementation of IDistributedCache which is not distributed. See below:
                 .AddDistributedMemoryCache();
-                // Uncomment the following line to use the Redis implementation of IDistributedCache. This will
-                // override any previously registered IDistributedCache service.
-                // Redis is a very fast cache provider and the recommended distributed cache provider.
-                // .AddDistributedRedisCache(options => { ... });
-                // Uncomment the following line to use the Microsoft SQL Server implementation of IDistributedCache.
-                // Note that this would require setting up the session state database.
-                // Redis is the preferred cache implementation but you can use SQL Server if you don't have an alternative.
-                // .AddSqlServerCache(
-                //     x =>
-                //     {
-                //         x.ConnectionString = "Server=.;Database=ASPNET5SessionState;Trusted_Connection=True;";
-                //         x.SchemaName = "dbo";
-                //         x.TableName = "Sessions";
-                //     });
+        // Uncomment the following line to use the Redis implementation of IDistributedCache. This will
+        // override any previously registered IDistributedCache service.
+        // Redis is a very fast cache provider and the recommended distributed cache provider.
+        // .AddDistributedRedisCache(options => { ... });
+        // Uncomment the following line to use the Microsoft SQL Server implementation of IDistributedCache.
+        // Note that this would require setting up the session state database.
+        // Redis is the preferred cache implementation but you can use SQL Server if you don't have an alternative.
+        // .AddSqlServerCache(
+        //     x =>
+        //     {
+        //         x.ConnectionString = "Server=.;Database=ASPNET5SessionState;Trusted_Connection=True;";
+        //         x.SchemaName = "dbo";
+        //         x.TableName = "Sessions";
+        //     });
 
         /// <summary>
         /// Configures the settings by binding the contents of the appsettings.json file to the specified Plain Old CLR
@@ -171,16 +171,15 @@ namespace Gateway
         /// </summary>
         public static IServiceCollection AddCustomGraphQLAuthorization(this IServiceCollection services) =>
             services
+
                 .AddSingleton<IAuthorizationEvaluator, AuthorizationEvaluator>()
                 .AddTransient<IValidationRule, AuthorizationValidationRule>()
-                .AddSingleton(
-                    x =>
-                    {
-                        var authorizationSettings = new AuthorizationSettings();
-                        authorizationSettings.AddPolicy(
-                            AuthorizationPolicyName.Admin,
-                            y => y.RequireClaim("role", "admin"));
-                        return authorizationSettings;
-                    });
+                .AddSingleton(s =>
+                {
+                    var authSettings = new AuthorizationSettings();
+                    authSettings.AddPolicy(AuthorizationPolicyName.Admin, policy => policy.RequireClaim("role", "Admin"));
+                    authSettings.AddPolicy(AuthorizationPolicyName.Authenticated, policy => policy.RequireClaim(""));
+                    return authSettings;
+                });
     }
 }

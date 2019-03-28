@@ -2,6 +2,7 @@ using Gateway.Models;
 using Gateway.Repositories;
 using Gateway.Types;
 using GraphQL.Types;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
 namespace Gateway.Queries
@@ -31,6 +32,7 @@ namespace Gateway.Queries
                 .Description("Gets pages of accounts.")
                 .Bidirectional()
                 .Resolve(context => {
+                    var values = context.UserContext;
                     return repository.Connection<Account, object>(_ => true, context);
                 });
         }

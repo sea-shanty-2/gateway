@@ -15,11 +15,14 @@ namespace Gateway
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Gateway.Data;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Identity.UI;
+    using Microsoft.AspNetCore.Authentication.JwtBearer;
 
     /// <summary>
     /// The main start-up class for the application.
     /// </summary>
-    public class Startup : IStartup
+    public class Startup
     {
         private readonly IConfiguration configuration;
         private readonly IHostingEnvironment hostingEnvironment;
@@ -42,7 +45,8 @@ namespace Gateway
         /// called by the ASP.NET runtime. See
         /// http://blogs.msdn.com/b/webdev/archive/2014/06/17/dependency-injection-in-asp-net-vnext.aspx
         /// </summary>
-        public IServiceProvider ConfigureServices(IServiceCollection services) =>
+        public void ConfigureServices(IServiceCollection services)
+        {
             services
                 .AddCorrelationIdFluent()
                 .AddCustomCaching()
@@ -58,8 +62,18 @@ namespace Gateway
                     .AddJsonFormatters()
                     .AddCustomJsonOptions(this.hostingEnvironment)
                     .AddCustomCors()
-                    .AddCustomMvcOptions(this.hostingEnvironment)
-                .Services
+                    .AddCustomMvcOptions(this.hostingEnvironment);
+
+
+            services
+                .AddAuthentication()
+                .AddFacebook(options =>
+                {
+                    options.AppId = configuration["FACEBOOK_APP_ID"];
+                    options.AppSecret = configuration["FACEBOOK_APP_SECRET"];
+                });
+
+            services
                 .AddCustomGraphQL(this.hostingEnvironment)
                 .AddIf(!this.hostingEnvironment.IsDevelopment(), x => x.AddSingleton<IDatabase, Database>())
                 .AddIf(this.hostingEnvironment.IsDevelopment(), x => x.AddSingleton<IDatabase, TestDatabase>())
@@ -67,7 +81,7 @@ namespace Gateway
                 .AddProjectRepositories()
                 .AddProjectSchemas()
                 .BuildServiceProvider();
-
+        }
         /// <summary>
         /// Configures the application and HTTP request pipeline. Configure is called after ConfigureServices is
         /// called by the ASP.NET runtime.
@@ -87,6 +101,7 @@ namespace Gateway
                     x => x.UseDeveloperErrorPages())
                 .UseHealthChecks("/status")
                 .UseHealthChecks("/status/self", new HealthCheckOptions() { Predicate = _ => false })
+                .UseAuthentication()
                 .UseStaticFilesWithCacheControl()
                 .UseWebSockets()
                 // Use the GraphQL subscriptions in the specified schema and make them available at /graphql.
