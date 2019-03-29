@@ -9,7 +9,8 @@ namespace Gateway
         public Task<object> BuildUserContext(HttpContext httpContext) =>
             Task.FromResult<object>(new GraphQLUserContext
             {
-                User = httpContext.User
+                User = httpContext.User,
+                Headers = httpContext.Request.Headers
             });
     }
 }

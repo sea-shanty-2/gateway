@@ -35,9 +35,10 @@ namespace Gateway
             object context,
             CancellationToken cancellationToken = default)
         {
+            
             var start = DateTime.UtcNow;
             var result = await base.ExecuteAsync(operationName, query, variables, context, cancellationToken);
-
+            
             if (this.options.EnableMetrics)
             {
                 try

@@ -14,5 +14,7 @@ namespace Gateway
         /// Gets the current users claims principal.
         /// </summary>
         public ClaimsPrincipal User { get; set; }
+
+        public IHeaderDictionary Headers { get; set; }
     }
 }

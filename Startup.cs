@@ -71,6 +71,7 @@ namespace Gateway
                 {
                     options.AppId = configuration["FACEBOOK_APP_ID"];
                     options.AppSecret = configuration["FACEBOOK_APP_SECRET"];
+                    
                 });
 
             services
