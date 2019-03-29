@@ -5,6 +5,6 @@ namespace Gateway.Data
 {
     public interface IDatabase
     {
-        IMongoCollection<T> GetCollection<T>() where T : Entity;
+        IMongoCollection<T> GetCollection<T>() where T : IEntity;
     }
 }

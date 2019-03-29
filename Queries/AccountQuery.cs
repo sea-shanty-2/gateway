@@ -32,7 +32,7 @@ namespace Gateway.Queries
                 .Description("Gets pages of accounts.")
                 .Bidirectional()
                 .Resolve(context => {
-                    
+
                     var values = context.UserContext;
                     return repository.Connection<Account, object>(_ => true, context);
                 });

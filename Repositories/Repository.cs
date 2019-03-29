@@ -22,14 +22,14 @@ namespace Gateway.Repositories
             _database = database;
         }
 
-        public async Task<T> AddAsync<T>(T item, CancellationToken cancellationToken = default) where T : Entity
+        public async Task<T> AddAsync<T>(T item, CancellationToken cancellationToken = default) where T : IEntity
         {
             await _database.GetCollection<T>().InsertOneAsync(item, new InsertOneOptions(), cancellationToken);
             var items = await _database.GetCollection<T>().FindAsync(Builders<T>.Filter.Eq(x => x.Id, item.Id), new FindOptions<T, T>(), cancellationToken);
             return await items.FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<T>> AddAsync<T>(IEnumerable<T> items, CancellationToken cancellationToken = default) where T : Entity
+        public async Task<IEnumerable<T>> AddAsync<T>(IEnumerable<T> items, CancellationToken cancellationToken = default) where T : IEntity
         {
             await _database.GetCollection<T>().InsertManyAsync(items, new InsertManyOptions(), cancellationToken);
 
@@ -44,31 +44,31 @@ namespace Gateway.Repositories
         }
 
 
-        public async Task DeleteAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : Entity
+        public async Task DeleteAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
         {
             await _database.GetCollection<T>().DeleteManyAsync(expression, cancellationToken);
         }
 
-        public async Task<IEnumerable<T>> ManyAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : Entity
+        public async Task<IEnumerable<T>> ManyAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
         {
             var cursor = await _database.GetCollection<T>().FindAsync(expression, new FindOptions<T, T>(), cancellationToken);
             return cursor.ToEnumerable(cancellationToken);
         }
 
-        public async Task<T> SingleAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : Entity
+        public async Task<T> SingleAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
         {
             var cursor = await _database.GetCollection<T>().FindAsync(expression, new FindOptions<T, T>(), cancellationToken);
             return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<T>> UpdateAsync<T>(Expression<Func<T, bool>> expression, T item, CancellationToken cancellationToken = default) where T : Entity
+        public async Task<IEnumerable<T>> UpdateAsync<T>(Expression<Func<T, bool>> expression, T item, CancellationToken cancellationToken = default) where T : IEntity
         {
             var update = new BsonDocument { { "$set", item.ToBsonDocument() } };
             await _database.GetCollection<T>().UpdateManyAsync(expression, update, new UpdateOptions(), cancellationToken);
             return await ManyAsync(expression, cancellationToken);
         }
 
-        public Connection<T> Connection<T, U>(Expression<Func<T, bool>> expression, ResolveConnectionContext<U> context) where T : Entity
+        public Connection<T> Connection<T, U>(Expression<Func<T, bool>> expression, ResolveConnectionContext<U> context) where T : IEntity
         {
             var data = _database.GetCollection<T>().Find(expression, new FindOptions()).ToEnumerable();
             var cancellationToken = context.CancellationToken;

@@ -18,6 +18,7 @@ namespace Gateway
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
+    using Gateway.Models;
 
     /// <summary>
     /// The main start-up class for the application.
@@ -48,6 +49,7 @@ namespace Gateway
         public void ConfigureServices(IServiceCollection services)
         {
             services
+                .AddHttpClient()
                 .AddCorrelationIdFluent()
                 .AddCustomCaching()
                 .AddCustomOptions(this.configuration)
@@ -64,15 +66,22 @@ namespace Gateway
                     .AddCustomCors()
                     .AddCustomMvcOptions(this.hostingEnvironment);
 
+            services.AddIdentityCore<Account>();
 
             services
                 .AddAuthentication()
-                .AddFacebook(options =>
-                {
-                    options.AppId = configuration["FACEBOOK_APP_ID"];
-                    options.AppSecret = configuration["FACEBOOK_APP_SECRET"];
-                    
-                });
+                .AddFacebook(options => {
+                    options.ClientId = configuration.GetValue<string>("FACEBOOK_APP_ID");
+                    options.ClientSecret = configuration.GetValue<string>("FACEBOOK_APP_SECRET");
+                });/* 
+                .AddOAuth("Facebook", options => {
+                    options.ClientId = configuration.GetValue<string>("FACEBOOK_APP_ID");
+                    options.ClientSecret = configuration.GetValue<string>("FACEBOOK_APP_SECRET");
+                    options.CallbackPath = "/signin-facebook";
+                    options.TokenEndpoint = "https://graph.facebook.com/oauth/access_token";
+                    options.AuthorizationEndpoint = "https://graph.facebook.com/debug_token";
+                    options.UserInformationEndpoint = "https://graph.facebook.com/me";
+                }); */
 
             services
                 .AddCustomGraphQL(this.hostingEnvironment)

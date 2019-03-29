@@ -15,7 +15,7 @@ namespace Gateway.Data
             _database = _client.GetDatabase("envue");
         }
 
-        public IMongoCollection<T> GetCollection<T>() where T : Entity
+        public IMongoCollection<T> GetCollection<T>() where T : IEntity
         {
             return _database.GetCollection<T>(typeof(T).Name);
         }

@@ -5,12 +5,17 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Gateway.Models
 {
-    public class Broadcast : Entity
+    public class Broadcast : IEntity
     {
         public Broadcast()
         {
             Token = Guid.NewGuid().ToString("N");
         }
+
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        [BsonIgnoreIfDefault]
+        public string Id { get; set; }
 
         public string Title { get; set; }
         public string Tag { get; set; }

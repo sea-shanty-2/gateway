@@ -3,11 +3,8 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Gateway.Models
 {
-    public abstract class Entity
+    public interface IEntity
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        [BsonIgnoreIfDefault]
-        public string Id { get; set; }
+        string Id { get; set; }
     }
 }
