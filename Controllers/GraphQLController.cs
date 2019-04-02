@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using GraphQL;
 using GraphQL.Instrumentation;
+using GraphQL.Introspection;
 using GraphQL.Types;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
@@ -22,7 +23,10 @@ namespace Gateway.Controllers
 
         [HttpGet]
         public async Task<ActionResult<object>> GetAsync() =>
-            await PostAsync(new GraphQLQuery());
+            await PostAsync(new GraphQLQuery {
+                OperationName = "IntrospectionQuery",
+                Query = SchemaIntrospection.IntrospectionQuery
+            });
 
 
         [HttpPost]
