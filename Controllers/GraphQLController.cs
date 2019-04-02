@@ -20,6 +20,10 @@ namespace Gateway.Controllers
             this.schema = schema;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<object>> GetAsync() =>
+            await PostAsync(new GraphQLQuery());
+
 
         [HttpPost]
         public async Task<ActionResult<object>> PostAsync([FromBody]GraphQLQuery query)
