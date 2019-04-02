@@ -1,7 +1,10 @@
 using Gateway.Models;
 using Gateway.Repositories;
 using Gateway.Types;
+using GraphQL;
 using GraphQL.Types;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
@@ -21,9 +24,10 @@ namespace Gateway.Queries
                         Name = "id",
                         Description = "The unique identifier of the account.",
                     }),
-                resolve: async context =>
+                resolve: async resolveContext =>
                 {
-                    var id = context.GetArgument<string>("id");
+                    
+                    var id = resolveContext.GetArgument<string>("id");
                     return await repository.SingleAsync<Account>(x => x.Id == id);
                 });
 
@@ -31,10 +35,10 @@ namespace Gateway.Queries
                 .Name("page")
                 .Description("Gets pages of accounts.")
                 .Bidirectional()
-                .Resolve(context => {
+                .Resolve(resolveContext => {
 
-                    var values = context.UserContext;
-                    return repository.Connection<Account, object>(_ => true, context);
+                    var values = resolveContext.UserContext;
+                    return repository.Connection<Account, object>(_ => true, resolveContext);
                 });
         }
     }
