@@ -24,11 +24,6 @@ namespace Gateway.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> PostAsync([FromBody]GraphQLQuery query)
         {
-            if (query == null)
-            {
-                return BadRequest(new ArgumentNullException(nameof(query)));
-            }
-
             var inputs = query.Variables.ToInputs();
             var queryToExecute = query.Query;
             var start = DateTime.UtcNow;
