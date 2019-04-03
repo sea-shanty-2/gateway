@@ -94,11 +94,8 @@ namespace Gateway
                 .UseAuthentication()
                 .UseGraphQL(options =>
                 {
-                    options.BuildUserContext = context => new GraphQLUserContext
-                    {
-                        User = context.User
-                    };
-                    options.ValidationRules = app.ApplicationServices.GetServices<IValidationRule>();
+                    options.Path = "/";
+                    options.ExposeExceptions = Environment.IsDevelopment();
                 })
                 .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
                 .UseDefaultFiles()
