@@ -7,10 +7,8 @@ namespace Gateway
 {
     public class GraphQLOptions
     {
-        public PathString Path { get; set; } = "/";
+        public PathString Path { get; set; } = "/graphql";
         public bool ExposeExceptions { get; set; } = false;
         public bool EnableMetrics { get; set; } = true;
-        public Func<HttpContext, object> BuildUserContext { get; set; }
-        public IEnumerable<IValidationRule> ValidationRules { get; set; }
     }
 }

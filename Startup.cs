@@ -21,7 +21,6 @@ using GraphQL.Server;
 using GraphQL.Server.Ui.Playground;
 using Gateway.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using AspNetCore.Identity.Mongo;
 using Gateway.Models;
 using Gateway.Extensions;
 using Gateway.Services;
@@ -94,11 +93,8 @@ namespace Gateway
                 .UseAuthentication()
                 .UseGraphQL(options =>
                 {
-                    options.BuildUserContext = context => new GraphQLUserContext
-                    {
-                        User = context.User
-                    };
-                    options.ValidationRules = app.ApplicationServices.GetServices<IValidationRule>();
+                    options.Path = "/";
+                    options.ExposeExceptions = Environment.IsDevelopment();
                 })
                 .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
                 .UseDefaultFiles()
