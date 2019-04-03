@@ -21,7 +21,6 @@ using GraphQL.Server;
 using GraphQL.Server.Ui.Playground;
 using Gateway.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using AspNetCore.Identity.Mongo;
 using Gateway.Models;
 using Gateway.Extensions;
 using Gateway.Services;
