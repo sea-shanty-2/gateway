@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace Gateway.Models
 {
@@ -26,7 +27,7 @@ namespace Gateway.Models
         public string BroadcasterId { get; set; }
         public DateTime Started { get; set; }
         public DateTime Ended { get; set; }
-        public Location Location { get; set; }
+        public GeoJson2DGeographicCoordinates Location { get; set; }
 
     }
 }

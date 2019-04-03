@@ -3,6 +3,7 @@ using System.Linq;
 using Bogus;
 using Gateway.Models;
 using MongoDB.Driver;
+using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace Gateway.Data
 {
@@ -17,7 +18,7 @@ namespace Gateway.Data
                 }).Generate(100);
 
             database.GetCollection<Account>().InsertMany(accounts);
-
+            
             var broadcasts = new Faker<Broadcast>()
                 .CustomInstantiator(f =>
                 {
@@ -28,7 +29,8 @@ namespace Gateway.Data
                         Tag = f.Lorem.Word(),
                         BroadcasterId = accounts.Skip(f.Random.Int(0, accounts.Count() - 1)).FirstOrDefault()?.Id,
                         Started = started,
-                        Ended = started.AddMinutes(f.Random.Double(1, 360))
+                        Ended = started.AddMinutes(f.Random.Double(1, 360)),
+                        Location = GeoJson.Geographic(f.Random.Double(-180, 180), f.Random.Double(-90, 90))
                     };
                 });
 
