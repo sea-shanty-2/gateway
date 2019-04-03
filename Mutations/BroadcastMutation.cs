@@ -2,6 +2,7 @@ using Gateway.Models;
 using Gateway.Repositories;
 using Gateway.Types;
 using GraphQL.Types;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Gateway.Mutations
@@ -21,9 +22,9 @@ namespace Gateway.Mutations
                 resolve: async context =>
                 {
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    return await repository.AddAsync(broadcast, context.CancellationToken);
+                    return await repository.AddOneAsync(broadcast, context.CancellationToken);
                 });
-            
+
 
 
             this.FieldAsync<BroadcastUpdateType>(
@@ -41,9 +42,14 @@ namespace Gateway.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    
+                    return await repository.UpdateOneAsync<Broadcast>(
+                        x => x.Id == id,
+                        new BsonDocument { { "$set", broadcast.ToBsonDocument() } },
+                        cancellationToken: context.CancellationToken
+                    );
                 });
-            
+
             this.FieldAsync<BroadcastDeleteType>(
                 "delete",
                 arguments: new QueryArguments(

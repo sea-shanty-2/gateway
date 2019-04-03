@@ -7,8 +7,7 @@ namespace Gateway.Types
     {
         public AccountInputType()
         {
-            Field(x => x.FirstName);
-            Field(x => x.LastName);
+            Field(x => x.DisplayName);
         }
     }
 }

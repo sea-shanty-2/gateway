@@ -23,7 +23,7 @@ namespace Gateway.Queries
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    return await repository.SingleAsync<Broadcast>(x => x.Id == id, context.CancellationToken);
+                    return await repository.FindOneAsync<Broadcast>(x => x.Id == id, context.CancellationToken);
                 });
 
             Connection<BroadcastType>()

@@ -22,14 +22,14 @@ namespace Gateway.Repositories
             _database = database;
         }
 
-        public async Task<T> AddAsync<T>(T item, CancellationToken cancellationToken = default) where T : IEntity
+        public async Task<T> AddOneAsync<T>(T item, CancellationToken cancellationToken = default) where T : IEntity
         {
             await _database.GetCollection<T>().InsertOneAsync(item, new InsertOneOptions(), cancellationToken);
             var items = await _database.GetCollection<T>().FindAsync(Builders<T>.Filter.Eq(x => x.Id, item.Id), new FindOptions<T, T>(), cancellationToken);
             return await items.FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<T>> AddAsync<T>(IEnumerable<T> items, CancellationToken cancellationToken = default) where T : IEntity
+        public async Task<IEnumerable<T>> AddManyAsync<T>(IEnumerable<T> items, CancellationToken cancellationToken = default) where T : IEntity
         {
             await _database.GetCollection<T>().InsertManyAsync(items, new InsertManyOptions(), cancellationToken);
 
@@ -49,23 +49,37 @@ namespace Gateway.Repositories
             await _database.GetCollection<T>().DeleteManyAsync(expression, cancellationToken);
         }
 
-        public async Task<IEnumerable<T>> ManyAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
+        public async Task<IEnumerable<T>> FindManyAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
         {
             var cursor = await _database.GetCollection<T>().FindAsync(expression, new FindOptions<T, T>(), cancellationToken);
             return cursor.ToEnumerable(cancellationToken);
         }
 
-        public async Task<T> SingleAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
+        public async Task<T> FindOneAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default) where T : IEntity
         {
             var cursor = await _database.GetCollection<T>().FindAsync(expression, new FindOptions<T, T>(), cancellationToken);
             return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<T>> UpdateAsync<T>(Expression<Func<T, bool>> expression, T item, CancellationToken cancellationToken = default) where T : IEntity
+        public async Task<T> UpdateOneAsync<T>(Expression<Func<T, bool>> expression, BsonDocument item, bool upsert = false, CancellationToken cancellationToken = default) where T : IEntity
         {
-            var update = new BsonDocument { { "$set", item.ToBsonDocument() } };
-            await _database.GetCollection<T>().UpdateManyAsync(expression, update, new UpdateOptions(), cancellationToken);
-            return await ManyAsync(expression, cancellationToken);
+            //var update = new BsonDocument { { "$set", item.ToBsonDocument() } };
+            await _database.GetCollection<T>().UpdateOneAsync(expression, item, new UpdateOptions
+            {
+                IsUpsert = upsert,
+            }, cancellationToken);
+            return await FindOneAsync(expression, cancellationToken);
+        }
+
+        public async Task<IEnumerable<T>> UpdateManyAsync<T>(Expression<Func<T, bool>> expression, BsonDocument item, bool upsert = false, CancellationToken cancellationToken = default) where T : IEntity
+        {
+            //var update = new BsonDocument { { "$set", item.ToBsonDocument() } };
+
+            await _database.GetCollection<T>().UpdateManyAsync(expression, item, new UpdateOptions
+            {
+                IsUpsert = upsert,
+            }, cancellationToken);
+            return await FindManyAsync(expression, cancellationToken);
         }
 
         public Connection<T> Connection<T, U>(Expression<Func<T, bool>> expression, ResolveConnectionContext<U> context) where T : IEntity
@@ -74,8 +88,8 @@ namespace Gateway.Repositories
             var cancellationToken = context.CancellationToken;
             IEnumerable<T> items;
             var totalCount = data.Count();
-            var pageSize = context.PageSize ?? totalCount; 
-            
+            var pageSize = context.PageSize ?? totalCount;
+
             if (context.IsUnidirectional || context.After != null || context.Before == null)
             {
                 if (context.After != null)

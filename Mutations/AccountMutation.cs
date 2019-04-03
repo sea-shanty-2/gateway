@@ -2,6 +2,7 @@ using Gateway.Models;
 using Gateway.Repositories;
 using Gateway.Types;
 using GraphQL.Types;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Gateway.Mutations
@@ -21,7 +22,7 @@ namespace Gateway.Mutations
                 resolve: async context =>
                 {
                     var account = context.GetArgument<Account>("account");
-                    return await repository.AddAsync(account, context.CancellationToken);
+                    return await repository.AddOneAsync(account, context.CancellationToken);
                 });
 
             this.FieldAsync<AccountType>(
@@ -39,7 +40,7 @@ namespace Gateway.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var account = context.GetArgument<Account>("account");
-                    return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
+                    return await repository.UpdateOneAsync<Account>(x => x.Id == id, new BsonDocument {{ "$set", account.ToBsonDocument()}}, cancellationToken: context.CancellationToken);
                 });
 
             this.FieldAsync<StringGraphType>(

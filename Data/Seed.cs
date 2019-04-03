@@ -13,8 +13,7 @@ namespace Gateway.Data
             var accounts = new Faker<Account>()
                 .CustomInstantiator(f => new Account()
                 {
-                    FirstName = f.Person.FirstName,
-                    LastName = f.Person.LastName
+                    DisplayName = f.Person.UserName
                 }).Generate(100);
 
             database.GetCollection<Account>().InsertMany(accounts);

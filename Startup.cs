@@ -24,6 +24,14 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using AspNetCore.Identity.Mongo;
 using Gateway.Models;
 using Gateway.Extensions;
+using Gateway.Services;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Gateway.Requirements;
+using GraphQL.Validation;
+using GraphQL.Validation.Complexity;
 
 namespace Gateway
 {
@@ -41,48 +49,42 @@ namespace Gateway
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<CookiePolicyOptions>(options =>
-            {
-                // This lambda determines whether user consent for non-essential cookies is needed for a given request.
-                options.CheckConsentNeeded = context => true;
-                options.MinimumSameSitePolicy = SameSiteMode.None;
-            });
-
             services
-                .AddIdentityMongoDbProvider<Account>();
-
-            services
-                .AddAuthentication()
-                .AddFacebook(options =>
+                .AddAuthentication(options =>
                 {
-                    options.ClientId = Configuration.GetValue<string>("FACEBOOK_APP_ID");
-                    options.ClientSecret = Configuration.GetValue<string>("FACEBOOK_APP_SECRET");
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(cfg =>
+                {
+                    cfg.RequireHttpsMetadata = Environment.IsProduction();
+                    cfg.SaveToken = true;
+                    cfg.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidIssuer = Configuration.GetValue<string>("JWT_ISSUER"),
+                        ValidateAudience = false,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetValue<string>("JWT_KEY")))
+                    };
                 });
 
             if (Environment.IsDevelopment())
-            {
                 services.AddSingleton<IDatabase, TestDatabase>();
-            }
             else
-            {
                 services.AddSingleton<IDatabase, Database>();
-            }
 
             services
-                .AddHttpClient()
-                .AddHttpContextAccessor()
-                .AddSingleton<IDependencyResolver>(s => new FuncDependencyResolver(s.GetRequiredService))
+                .AddSingleton<IDependencyResolver, GraphQLDependencyResolver>()
                 .AddSingleton<IDocumentExecuter, DocumentExecuter>()
                 .AddSingleton<IDocumentWriter, DocumentWriter>()
                 .AddSingleton<IRepository, Repository>()
                 .AddSingleton<ISchema, MainSchema>()
-                .AddGraphTypes()
-                .AddRelayGraphTypes();
-
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2); ;
+                .AddSingleton<JWTService>()
+                .AddRelayGraphTypes()
+                .AddGraphQLAuth()
+                .AddGraphTypes();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
             if (Environment.IsDevelopment())
@@ -90,11 +92,17 @@ namespace Gateway
 
             app
                 .UseAuthentication()
+                .UseGraphQL(options =>
+                {
+                    options.BuildUserContext = context => new GraphQLUserContext
+                    {
+                        User = context.User
+                    };
+                    options.ValidationRules = app.ApplicationServices.GetServices<IValidationRule>();
+                })
                 .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
                 .UseDefaultFiles()
-                .UseStaticFiles()
-                .UseCookiePolicy()
-                .UseMvc();
+                .UseStaticFiles();
         }
     }
 }

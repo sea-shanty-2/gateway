@@ -1,13 +1,21 @@
+using System;
 using System.Linq;
 using System.Reflection;
+using Gateway.Requirements;
+using GraphQL.Authorization;
 using GraphQL.Types;
 using GraphQL.Types.Relay;
+using GraphQL.Validation;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Gateway.Extensions
 {
     public static class ServiceCollectionExtensions
     {
+
         public static IServiceCollection AddRelayGraphTypes(this IServiceCollection services) => services
             .AddSingleton(typeof(ConnectionType<>))
             .AddSingleton(typeof(EdgeType<>))
@@ -22,5 +30,21 @@ namespace Gateway.Extensions
             }
             return services;
         }
+
+        public static IServiceCollection AddGraphQLAuth(this IServiceCollection services)
+        {
+            services.AddSingleton<IAuthorizationEvaluator, AuthorizationEvaluator>();
+            services.AddTransient<IValidationRule, AuthorizationValidationRule>();
+
+            services.AddSingleton(s =>
+            {
+                var authSettings = new AuthorizationSettings();
+                authSettings.AddPolicy("AuthenticatedPolicy", p => p.AddRequirement(new AuthenticatedUserRequirement()));
+                return authSettings;
+            });
+
+            return services;
+        }
+
     }
 }

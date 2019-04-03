@@ -5,10 +5,15 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Gateway.Models
 {
-    public class Account : MongoUser, IEntity
+    public class Account : IEntity
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string FullName => string.Join(' ', FirstName, LastName);
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        [BsonIgnoreIfDefault]
+        public string Id { get; set; }
+        [BsonIgnoreIfDefault]
+        public string DisplayName { get; set; }
+        [BsonIgnoreIfDefault]
+        public string FacebookId { get; set; }
     }
 }

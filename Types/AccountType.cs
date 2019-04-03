@@ -9,9 +9,7 @@ namespace Gateway.Types
         public AccountType(IRepository repository)
         {
             Field(x => x.Id, type: typeof(NonNullGraphType<IdGraphType>));
-            Field(x => x.FirstName);
-            Field(x => x.LastName);
-            Field(x => x.FullName);
+            Field(x => x.DisplayName);
 
             Connection<BroadcastType>()
                 .Name("broadcasts")

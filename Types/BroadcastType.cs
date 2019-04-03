@@ -18,7 +18,7 @@ namespace Gateway.Types
             FieldAsync<AccountType>(
                 "broadcaster",
                 resolve: async context =>
-                    await repository.SingleAsync<Account>(x => x.Id == context.Source.BroadcasterId, context.CancellationToken)
+                    await repository.FindOneAsync<Account>(x => x.Id == context.Source.BroadcasterId, context.CancellationToken)
             );
         }
     }
