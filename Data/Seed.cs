@@ -15,7 +15,7 @@ namespace Gateway.Data
                 .CustomInstantiator(f => new Account()
                 {
                     DisplayName = f.Person.UserName
-                }).Generate(100);
+                }).Generate(10000);
 
             database.GetCollection<Account>().InsertMany(accounts);
             
@@ -29,8 +29,8 @@ namespace Gateway.Data
                         Tag = f.Lorem.Word(),
                         BroadcasterId = accounts.Skip(f.Random.Int(0, accounts.Count() - 1)).FirstOrDefault()?.Id,
                         Started = started,
-                        Ended = started.AddMinutes(f.Random.Double(1, 360)),
-                        Location = GeoJson.Geographic(f.Random.Double(-180, 180), f.Random.Double(-90, 90))
+                        Ended = f.Random.Bool() ? started.AddMinutes(f.Random.Double(1, 360)) : default,
+                        Location = GeoJson.Geographic(f.Random.Double(55.67549, 57.048), f.Random.Double(9.9187, 12.56553))
                     };
                 });
 
