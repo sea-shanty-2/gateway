@@ -34,6 +34,15 @@ namespace Gateway.Queries
                 .Resolve(context => {
                     return repository.Connection<Broadcast, object>(_ => true, context);
                 });
+
+            Connection<BroadcastType>()
+                .Name("active")
+                .Description("Gets active broadcasts.")
+                .Bidirectional()
+                // Set the maximum size of a page, use .ReturnAll() to set no maximum size.
+                .Resolve(context => {
+                    return repository.Connection<Broadcast, object>(x => x.Ended == default, context);
+                });
         }
     }
 }
