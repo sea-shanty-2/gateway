@@ -67,7 +67,7 @@ namespace Gateway
                     };
                 });
 
-            if (Environment.IsDevelopment())
+            if (Environment.IsDevelopment() || Environment.IsStaging())
                 services.AddSingleton<IDatabase, TestDatabase>();
             else
                 services.AddSingleton<IDatabase, Database>();
