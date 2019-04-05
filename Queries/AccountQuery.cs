@@ -15,7 +15,7 @@ namespace Gateway.Queries
     {
         public AccountQuery(IRepository repository)
         {
-            this.AuthorizeWith("AuthenticatedPolicy");
+            //this.AuthorizeWith("AuthenticatedPolicy");
             
             this.FieldAsync<AccountType, Account>(
                 "single",
