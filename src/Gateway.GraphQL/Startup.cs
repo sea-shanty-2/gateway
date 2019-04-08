@@ -42,7 +42,7 @@ namespace Gateway.GraphQL
                 {
                     cfg.RequireHttpsMetadata = Environment.IsProduction();
                     cfg.SaveToken = true;
-                    cfg.TokenValidationParameters = new TokenValidationParameters()
+                    cfg.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidIssuer = Configuration.GetValue<string>("JWT_ISSUER"),
                         ValidateAudience = false,
