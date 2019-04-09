@@ -5,21 +5,7 @@ jobs:
       - image: microsoft/dotnet:sdk
     steps:
       - checkout
-      
-      - run: apt-get update -yq && apt-get upgrade -yq && apt-get install -yq curl git nano
-      - run: curl -sL https://deb.nodesource.com/setup_8.x | bash - && apt-get install -yq nodejs build-essential
-      - run: npm i -g npm
-      - run: npm i -g apollo
-
       - run: find .
       - run: dotnet restore
       - run: dotnet build
-      - run: 
-          name: Starting server
-          command: dotnet run
-          background: true
-      - run: sleep 5
-      - run: |
-          if [ "${CIRCLE_BRANCH}" == "master" ]; then
-            apollo service:push --tag=master --endpoint=http://localhost:5000
-          fi
+      - run: dotnet test --no-build tests/**
