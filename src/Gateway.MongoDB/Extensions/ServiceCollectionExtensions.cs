@@ -6,7 +6,6 @@ using Gateway.Models;
 using Gateway.MongoDB.Repositories;
 using Gateway.Repositories;
 using Microsoft.Extensions.DependencyInjection;
-using Mongo2Go;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.IdGenerators;
@@ -22,24 +21,18 @@ namespace Gateway.MongoDB.Extensions
         /// </summary>
         /// <param name="services"></param>
         /// <param name="connectionString">If not specified, an in memory mongo database is used.</param>
+        /// <param name="drop">If true, the existing data (if any) will be dropped.</param>
         /// <returns></returns>
-        public static IServiceCollection AddMongoDBRepositories(this IServiceCollection services, string connectionString = default)
+        public static IServiceCollection AddMongoDBRepositories(this IServiceCollection services, string connectionString, bool drop = false)
         {
-            IMongoDatabase database = null;
+            var dbname = MongoUrl.Create(connectionString).DatabaseName;
+            var client = new MongoClient(connectionString);
 
-            if (connectionString == default)
-            {
-                var runner = MongoDbRunner.StartForDebugging();
-                var client = new MongoClient(runner.ConnectionString);
-                client.DropDatabase("debug");
-                database = client.GetDatabase("debug");
+            if (drop) {
+                client.DropDatabase(dbname);
             }
-            else
-            {
-                var dbname = MongoUrl.Create(connectionString).DatabaseName;
-                var client = new MongoClient(connectionString);
-                database = client.GetDatabase(dbname);
-            }
+
+            var database = client.GetDatabase(dbname);
 
             services.AddSingleton(database);
             services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));

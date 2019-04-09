@@ -51,6 +51,7 @@ namespace Gateway.GraphQL
                 });
 
             services
+                .AddMongoDBRepositories(Configuration.GetConnectionString("Envue"), !Environment.IsProduction())
                 .AddSingleton<IDependencyResolver, DependencyResolver>()
                 .AddSingleton<IDocumentExecuter, DocumentExecuter>()
                 .AddSingleton<IDocumentWriter, DocumentWriter>()
@@ -60,17 +61,8 @@ namespace Gateway.GraphQL
                 .AddGraphQLAuth()
                 .AddGraphTypes();
 
-            if (Environment.IsDevelopment())
-            {
-                services
-                    .AddSingleton<SeedService>()
-                    .AddMongoDBRepositories();
-            }
-            else
-            {
-                services
-                    .AddMongoDBRepositories(Configuration.GetConnectionString("Envue"));
-            }
+            if (!Environment.IsProduction())
+                services.AddSingleton<SeedService>();
         }
 
         public void Configure(IApplicationBuilder app)
