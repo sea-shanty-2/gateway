@@ -67,8 +67,11 @@ namespace Gateway.GraphQL
 
         public void Configure(IApplicationBuilder app)
         {
-            if (Environment.IsDevelopment())
-                app.UseDeveloperExceptionPage();
+            if (!Environment.IsDevelopment())
+                app
+                    .UseDeveloperExceptionPage()
+                    .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
+                    .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager", GraphQLEndPoint = "/" });
 
             app
                 .UseAuthentication()
@@ -77,8 +80,6 @@ namespace Gateway.GraphQL
                     options.Path = "/";
                     options.ExposeExceptions = Environment.IsDevelopment();
                 })
-                .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
-                .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager", GraphQLEndPoint = "/" })
                 .UseDefaultFiles()
                 .UseStaticFiles();
         }
