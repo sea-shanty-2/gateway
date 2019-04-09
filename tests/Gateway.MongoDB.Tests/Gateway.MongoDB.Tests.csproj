@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Gateway.MongoDB\Gateway.MongoDB.csproj" />
     
+    <PackageReference Include="Mongo2Go" Version="2.2.9" />
     <PackageReference Include="bogus" Version="26.0.2" />
     <PackageReference Include="nunit" Version="3.11.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.0" />
