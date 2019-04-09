@@ -67,7 +67,7 @@ namespace Gateway.GraphQL.Queries
                         account = await repository.AddAsync(new Account
                         {
                             FacebookId = fbid,
-                            DisplayName = "Doe"
+                            DisplayName = "Jendal"
                         }, context.CancellationToken);
 
                     // Create and return an access token for the account
