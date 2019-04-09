@@ -2,10 +2,6 @@ namespace Gateway.Models
 {
     public class Broadcast : IEntity
     {
-        public Broadcast(string token)
-        {
-            this.Token = token;
-        }
         public string Id { get; set; }
         public string Token { get; }
         public string Title { get; set; }
