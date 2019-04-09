@@ -36,6 +36,15 @@ namespace Gateway.GraphQL.Queries
                     var entities = await repository.FindRangeAsync(_ => true);
                     return entities.ToConnection(context);
                 });
+
+            Connection<BroadcastType>()
+                .Name("active")
+                .Description("Gets active broadcasts.")
+                .Bidirectional()
+                // Set the maximum size of a page, use .ReturnAll() to set no maximum size.
+                .Resolve(context => {
+                    return repository.Connection<Broadcast, object>(x => x.Ended == default, context);
+                });
         }
     }
 }
