@@ -12,6 +12,7 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Title);
             Field(x => x.Tag);
             Field(x => x.Location, type: typeof(LocationType));
+            Field(x => x.Activity, type: typeof(DateTimeGraphType));
         }
     }
 

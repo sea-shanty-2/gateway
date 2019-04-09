@@ -67,7 +67,7 @@ namespace Gateway.GraphQL
 
         public void Configure(IApplicationBuilder app)
         {
-            if (!Environment.IsDevelopment())
+            if (!Environment.IsProduction())
                 app
                     .UseDeveloperExceptionPage()
                     .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })

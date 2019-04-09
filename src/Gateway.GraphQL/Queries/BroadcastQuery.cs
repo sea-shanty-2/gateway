@@ -1,3 +1,4 @@
+using System;
 using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Types;
 using Gateway.Models;
@@ -34,6 +35,16 @@ namespace Gateway.GraphQL.Queries
                 .ResolveAsync(async context =>
                 {
                     var entities = await repository.FindRangeAsync(_ => true, context.CancellationToken);
+                    return entities.ToConnection(context);
+                });
+
+            Connection<BroadcastType>()
+                .Name("active")
+                .Description("Gets pages of active broadcasts.")
+                .Bidirectional()
+                .ResolveAsync(async context => {
+                    var expiration = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1));
+                    var entities = await repository.FindRangeAsync(x => x.Activity.CompareTo(expiration) > 0);
                     return entities.ToConnection(context);
                 });
         }
