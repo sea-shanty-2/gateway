@@ -44,6 +44,9 @@ namespace Gateway.GraphQL
                     cfg.SaveToken = true;
                     cfg.TokenValidationParameters = new TokenValidationParameters
                     {
+                        SaveSigninToken = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidateIssuer = true,
                         ValidIssuer = Configuration.GetValue<string>("JWT_ISSUER"),
                         ValidateAudience = false,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetValue<string>("JWT_KEY")))
@@ -67,7 +70,7 @@ namespace Gateway.GraphQL
 
         public void Configure(IApplicationBuilder app)
         {
-            if (!Environment.IsProduction())
+            if (Environment.IsDevelopment())
                 app
                     .UseDeveloperExceptionPage()
                     .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })

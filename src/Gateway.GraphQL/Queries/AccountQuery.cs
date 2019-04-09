@@ -17,6 +17,16 @@ namespace Gateway.GraphQL.Queries
     {
         public AccountQuery(IRepository<Account> repository)
         {
+            this.FieldAsync<AccountType>(
+                "me",
+                "Get the logged in account",
+                resolve: async context =>
+                {
+                    var identity = context.UserContext.As<UserContext>().User.Identity;
+                    return await repository.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
+
             this.FieldAsync<AccountType, Account>(
                 "single",
                 "Get an account by its unique identifier.",
