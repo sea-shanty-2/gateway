@@ -32,7 +32,7 @@ namespace Gateway.GraphQL.Services
       var broadcasts = new Faker<Broadcast>()
           .CustomInstantiator(f =>
           {
-            return new Broadcast(f.Random.Guid().ToString())
+            return new Broadcast
             {
               Activity = f.Date.Soon(),
               Bitrate = f.Random.Int(0, 160),
