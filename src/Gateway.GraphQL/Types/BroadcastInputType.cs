@@ -7,8 +7,7 @@ namespace Gateway.GraphQL.Types
     {
         public BroadcastInputType()
         {
-            Field(x => x.Title);
-            Field(x => x.Tag);
+            Field(x => x.Categories);
             Field(x => x.Location, type: typeof(LocationInputType));
         }
     }

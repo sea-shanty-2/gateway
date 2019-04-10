@@ -9,8 +9,6 @@ namespace Gateway.GraphQL.Types
         public BroadcastType()
         {
             Field(x => x.Id);
-            Field(x => x.Title);
-            Field(x => x.Tag);
             Field(x => x.Location, type: typeof(LocationType));
         }
     }
@@ -29,7 +27,6 @@ namespace Gateway.GraphQL.Types
         public BroadcastUpdateType()
         {
             Field(x => x.Id);
-            Field(x => x.Title);
         }
     }
 }
