@@ -2,6 +2,7 @@ using Gateway.GraphQL.Types;
 using Gateway.Models;
 using Gateway.Repositories;
 using GraphQL.Types;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -9,11 +10,12 @@ namespace Gateway.GraphQL.Mutations
 {
     public class BroadcastMutation : ObjectGraphType<object>
     {
-        public BroadcastMutation(IRepository<Broadcast> repository)
+        public BroadcastMutation(IRepository<Broadcast> repository, IConfiguration configuration)
         {
 
-            this.FieldAsync<BroadcastCreateType>(
+            this.FieldAsync<StringGraphType>(
                 "create",
+                "Create a broadcast and obtain the rtmp url",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<BroadcastInputType>>()
                     {
@@ -22,7 +24,9 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    return await repository.AddAsync(broadcast, context.CancellationToken);
+                    await repository.AddAsync(broadcast, context.CancellationToken);
+                    // TODO: Add servers to the database and get a server randomly or based on region 
+                    return $"{configuration.GetValue<string>("RTMP_SERVER")}/{broadcast.Token}";
                 });
 
 
@@ -42,7 +46,7 @@ namespace Gateway.GraphQL.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    
+
                     return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
                 });
 
