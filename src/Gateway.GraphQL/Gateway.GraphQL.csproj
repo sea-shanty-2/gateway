@@ -8,9 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Base -->
+    <PackageReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Gateway\Gateway.csproj" />
     <ProjectReference Include="..\Gateway.MongoDB\Gateway.MongoDB.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.App" />
+
+    <!-- Logging -->
+    <PackageReference Include="Serilog" Version="2.8.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="2.1.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.0.0" />
+
+    <!-- Seed data -->
     <PackageReference Include="bogus" Version="26.0.2" />
 
     <!-- GraphQL -->

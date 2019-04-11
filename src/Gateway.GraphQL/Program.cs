@@ -4,6 +4,9 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Logging;
+using Serilog;
+using Serilog.Events;
 
 namespace Gateway.GraphQL
 {
@@ -11,31 +14,47 @@ namespace Gateway.GraphQL
     {
         public static void Main(string[] args)
         {
-            var host = CreateWebHostBuilder(args).Build();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .Enrich.FromLogContext()
+                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Hour)
+                .WriteTo.Console()
+                .CreateLogger();
 
-            using (var scope = host.Services.CreateScope())
+            try
             {
-                var services = scope.ServiceProvider;
-                try
+                Log.Information("Starting web host");
+                var host = CreateWebHostBuilder(args).Build();
+
+                using (var scope = host.Services.CreateScope())
                 {
+                    var services = scope.ServiceProvider;
+
                     if (!services.GetService<IHostingEnvironment>().IsProduction())
                     {
                         var context = services.GetRequiredService<SeedService>();
                         context.Seed();
                     }
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred while seeding the database.");
-                }
-            }
 
-            host.Run();
+                }
+
+                host.Run();
+
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Host terminated unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+                .UseStartup<Startup>()
+                .UseSerilog();
     }
 }
