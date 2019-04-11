@@ -13,6 +13,7 @@ using GraphQL.Instrumentation;
 using GraphQL.Types;
 using GraphQL.Validation;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -25,14 +26,17 @@ namespace Gateway.GraphQL
         private readonly IEnumerable<IValidationRule> _rules;
         private readonly IDocumentExecuter _executer;
         private readonly IDocumentWriter _writer;
+        private readonly ILogger _logger;
 
         public Middleware(
             RequestDelegate next,
             Options settings,
+            ILogger<Middleware> logger,
             IEnumerable<IValidationRule> rules,
             IDocumentExecuter executer,
             IDocumentWriter writer)
         {
+            _logger = logger;
             _rules = rules;
             _next = next;
             _settings = settings;
@@ -98,6 +102,11 @@ namespace Gateway.GraphQL
 
             if (_settings.EnableMetrics && result.Errors == null)
                 result.EnrichWithApolloTracing(start);
+
+            if (result.Errors != null)
+            {
+                _logger.LogError("GraphQL execution error(s): {Errors}", result.Errors);
+            }
 
             await WriteResponseAsync(context, result);
         }

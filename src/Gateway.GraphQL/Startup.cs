@@ -1,3 +1,5 @@
+using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Services;
@@ -44,9 +46,6 @@ namespace Gateway.GraphQL
                     cfg.SaveToken = true;
                     cfg.TokenValidationParameters = new TokenValidationParameters
                     {
-                        SaveSigninToken = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidateIssuer = true,
                         ValidIssuer = Configuration.GetValue<string>("JWT_ISSUER"),
                         ValidateAudience = false,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetValue<string>("JWT_KEY")))
