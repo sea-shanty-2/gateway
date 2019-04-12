@@ -25,7 +25,6 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    broadcast.Activity = DateTime.UtcNow;
                     await repository.AddAsync(broadcast, context.CancellationToken);
                     // TODO: Add servers to the database and get a server randomly or based on region 
                     return $"{configuration.GetValue<string>("RTMP_SERVER")}/{broadcast.Token}";
@@ -33,7 +32,7 @@ namespace Gateway.GraphQL.Mutations
 
 
 
-            this.FieldAsync<BroadcastUpdateType>(
+            this.FieldAsync<BroadcastType>(
                 "update",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()

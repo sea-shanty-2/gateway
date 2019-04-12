@@ -9,6 +9,7 @@ namespace Gateway.GraphQL.Types
     {
         public AccountType()
         {
+            Name = "Account";
             Field(x => x.Id);
             Field(x => x.DisplayName);
         }
