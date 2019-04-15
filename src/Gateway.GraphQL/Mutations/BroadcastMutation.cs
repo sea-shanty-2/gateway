@@ -6,6 +6,7 @@ using GraphQL.Types;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using GraphQL.Authorization;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -13,7 +14,7 @@ namespace Gateway.GraphQL.Mutations
     {
         public BroadcastMutation(IRepository<Broadcast> repository, IConfiguration configuration)
         {
-
+            
             this.FieldAsync<StringGraphType>(
                 "create",
                 "Create a broadcast and obtain the rtmp url",

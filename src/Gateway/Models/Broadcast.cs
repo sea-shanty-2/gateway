@@ -17,5 +17,6 @@ namespace Gateway.Models
         public float Stability { get; set; }
         public Location Location { get; set; }
         public DateTime Activity { get; set; }
+        public string AccountId { get; set; }
     }
 }

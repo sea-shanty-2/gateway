@@ -12,20 +12,6 @@ namespace Gateway.GraphQL.Mutations
     {
         public AccountMutation(IRepository<Account> repository)
         {
-            // Was used initially for testing, but accounts are now created on first API authentication.
-            /* this.FieldAsync<AccountType>(
-                "create",
-                arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<AccountInputType>>()
-                    {
-                        Name = "account"
-                    }),
-                resolve: async context =>
-                {
-                    var account = context.GetArgument<Account>("account");
-                    return await repository.AddAsync(account, context.CancellationToken);
-                }); */
-
             this.FieldAsync<AccountType>(
                 "update",
                 arguments: new QueryArguments(
