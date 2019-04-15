@@ -7,7 +7,6 @@ namespace Gateway.GraphQL.Types
     {
         public AccountInputType()
         {
-            Name = "AccountInput";
             Field(x => x.DisplayName);
         }
     }

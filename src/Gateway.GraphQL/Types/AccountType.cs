@@ -11,7 +11,6 @@ namespace Gateway.GraphQL.Types
     {
         public AccountType(IRepository<Broadcast> broadcastRepository)
         {
-            Name = "Account";
             Field(x => x.Id);
             Field(x => x.DisplayName);
 
