@@ -40,7 +40,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     },
-                    new QueryArgument<NonNullGraphType<BroadcastInputType>>()
+                    new QueryArgument<NonNullGraphType<BroadcastUpdateInputType>>()
                     {
                         Name = "broadcast"
                     }),
