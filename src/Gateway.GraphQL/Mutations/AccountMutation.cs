@@ -19,7 +19,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     },
-                    new QueryArgument<NonNullGraphType<AccountInputType>>()
+                    new QueryArgument<NonNullGraphType<AccountUpdateInputType>>()
                     {
                         Name = "account"
                     }),

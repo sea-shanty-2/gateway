@@ -13,6 +13,7 @@ namespace Gateway.GraphQL.Types
         {
             Field(x => x.Id);
             Field(x => x.DisplayName);
+            Field(x => x.Categories);
 
             Connection<BroadcastType>()
                 .Name("broadcasts")
