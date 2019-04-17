@@ -15,7 +15,7 @@ namespace Gateway.GraphQL.Mutations
         public BroadcastMutation(IRepository<Broadcast> repository, IConfiguration configuration)
         {
             
-            this.FieldAsync<StringGraphType>(
+            this.FieldAsync<BroadcastCreateType>(
                 "create",
                 "Create a broadcast and obtain the rtmp url",
                 arguments: new QueryArguments(
@@ -26,9 +26,7 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    await repository.AddAsync(broadcast, context.CancellationToken);
-                    // TODO: Add servers to the database and get a server randomly or based on region 
-                    return $"{configuration.GetValue<string>("RTMP_SERVER")}/{broadcast.Token}";
+                    return await repository.AddAsync(broadcast, context.CancellationToken);
                 });
 
 

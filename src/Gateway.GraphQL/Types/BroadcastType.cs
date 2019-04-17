@@ -1,6 +1,8 @@
+using System;
 using Gateway.Models;
 using Gateway.Repositories;
 using GraphQL.Types;
+using Microsoft.Extensions.Configuration;
 
 namespace Gateway.GraphQL.Types
 {
@@ -13,5 +15,18 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Activity, type: typeof(DateTimeGraphType));
         }
     }
-    
+
+    public class BroadcastCreateType : ObjectGraphType<Broadcast>
+    {
+        public BroadcastCreateType(IConfiguration configuration)
+        {
+            Field(x => x.Id);
+            Field<StringGraphType>(
+                "rtmp", 
+                "the broadcast rtmp server", 
+                resolve: context =>
+                    $"{configuration.GetValue<string>("RTMP_SERVER")}/{Guid.NewGuid().ToString("N")}"
+            );
+        }
+    }
 }
