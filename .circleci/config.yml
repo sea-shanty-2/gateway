@@ -9,3 +9,24 @@ jobs:
       - run: dotnet restore
       - run: dotnet build
       - run: dotnet test --no-build tests/**
+
+  deploy:
+    machine:
+      enabled: true
+    steps:
+      - checkout
+      - run: docker build -t envue/gateway .
+      - run: docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASS}
+      - run: docker push envue/gateway
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy:
+         requires:
+           - build
+         filters:
+           branches:
+             only: master
