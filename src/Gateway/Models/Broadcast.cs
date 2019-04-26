@@ -2,19 +2,19 @@ using System;
 
 namespace Gateway.Models
 {
-  public class Broadcast : IEntity
-  {
-    public Broadcast() 
+    public class Broadcast : IEntity
     {
-        Token = Guid.NewGuid().ToString("N");
+        public Broadcast()
+        {
+            Activity = DateTime.UtcNow;
+        }
+
+        public string Id { get; set; }
+        public double[] Categories { get; set; }
+        public int Bitrate { get; set; }
+        public double Stability { get; set; }
+        public Location Location { get; set; }
+        public DateTime Activity { get; set; }
+        public string AccountId { get; set; }
     }
-    
-    public string Id { get; set; }
-    public string Token { get; }
-    public double[] Categories { get; set; }
-    public int Bitrate { get; set; }
-    public float Stability { get; set; }
-    public Location Location { get; set; }
-    public DateTime Activity { get; set; }
-  }
 }

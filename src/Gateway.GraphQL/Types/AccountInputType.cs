@@ -9,5 +9,18 @@ namespace Gateway.GraphQL.Types
         {
             Field(x => x.DisplayName);
         }
+
     }
+    
+    public class AccountUpdateInputType : InputObjectGraphType<Account>
+    {
+        public AccountUpdateInputType()
+        {
+            Field(x => x.DisplayName, nullable: true);
+            Field(x => x.Categories, nullable: true);
+            
+        }
+
+    }
+
 }

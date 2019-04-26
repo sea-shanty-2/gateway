@@ -8,7 +8,8 @@ namespace Gateway.GraphQL.Requirements
         public Task Authorize(AuthorizationContext context)
         {
             if (!context.User.Identity.IsAuthenticated)
-                context.ReportError("");
+                context.ReportError("Identity is unauthenticated");
+
             return Task.CompletedTask;
         }
     }

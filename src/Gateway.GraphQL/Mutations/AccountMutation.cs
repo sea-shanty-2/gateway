@@ -4,6 +4,7 @@ using Gateway.Repositories;
 using GraphQL.Types;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using GraphQL.Authorization;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -11,20 +12,6 @@ namespace Gateway.GraphQL.Mutations
     {
         public AccountMutation(IRepository<Account> repository)
         {
-
-            this.FieldAsync<AccountType>(
-                "create",
-                arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<AccountInputType>>()
-                    {
-                        Name = "account"
-                    }),
-                resolve: async context =>
-                {
-                    var account = context.GetArgument<Account>("account");
-                    return await repository.AddAsync(account, context.CancellationToken);
-                });
-
             this.FieldAsync<AccountType>(
                 "update",
                 arguments: new QueryArguments(
@@ -32,7 +19,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     },
-                    new QueryArgument<NonNullGraphType<AccountInputType>>()
+                    new QueryArgument<NonNullGraphType<AccountUpdateInputType>>()
                     {
                         Name = "account"
                     }),

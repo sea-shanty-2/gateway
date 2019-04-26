@@ -23,7 +23,8 @@ namespace Gateway.GraphQL.Services
           {
             return new Account
             {
-              DisplayName = f.Person.UserName
+              DisplayName = f.Person.UserName,
+              Categories = new double[2]{f.Random.Double(0, 1), f.Random.Double(0, 1)}
             };
           });
 
