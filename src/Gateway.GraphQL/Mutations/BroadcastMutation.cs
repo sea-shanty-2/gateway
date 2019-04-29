@@ -7,6 +7,9 @@ using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using GraphQL.Authorization;
+using System.Net.Http;
+using GraphQL;
+using System.Collections.Generic;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -14,7 +17,7 @@ namespace Gateway.GraphQL.Mutations
     {
         public BroadcastMutation(IRepository<Broadcast> repository, IConfiguration configuration)
         {
-            
+
             this.FieldAsync<BroadcastCreateType>(
                 "create",
                 "Create a broadcast and obtain the rtmp url",
@@ -26,9 +29,29 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
-                    return await repository.AddAsync(broadcast, context.CancellationToken);
-                });
+                    broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
 
+                    var client = new HttpClient
+                    {
+                        BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                    };
+
+                    var response = await client.PostAsJsonAsync(
+                        "/data/add",
+                        new List<Broadcast> { broadcast },
+                        context.CancellationToken);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        /// TODO: Deserialize JSON and instantiate execution error properly.
+                        /// https://graphql.org/learn/validation/ 
+                        var error = await response.Content.ReadAsStringAsync();
+                        context.Errors.Add(new ExecutionError("error"));
+                        return default;
+                    }
+
+                    return broadcast;
+                });
 
 
             this.FieldAsync<BroadcastType>(
@@ -47,7 +70,25 @@ namespace Gateway.GraphQL.Mutations
                     var id = context.GetArgument<string>("id");
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
                     broadcast.Activity = DateTime.UtcNow;
-                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+
+                    var client = new HttpClient
+                    {
+                        BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                    };
+
+                    var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        /// TODO: Deserialize JSON and instantiate execution error properly.
+                        /// https://graphql.org/learn/validation/ 
+                        var error = await response.Content.ReadAsStringAsync();
+                        context.Errors.Add(new ExecutionError("error"));
+                        return default;
+                    }
+
+                    return broadcast;
                 });
 
             this.FieldAsync<IdGraphType>(
