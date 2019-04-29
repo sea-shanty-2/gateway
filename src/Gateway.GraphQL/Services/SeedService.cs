@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Bogus;
 using Gateway.Models;
 using Gateway.Repositories;
@@ -42,7 +43,8 @@ namespace Gateway.GraphQL.Services
                 Latitude = f.Random.Double(55.676098, 57.048820),
                 Longitude = f.Random.Double(9.921747, 12.568337)
               },
-              Stability = f.Random.Float()
+              Stability = f.Random.Float(),
+              Categories = new List<double> { f.Random.Double() }.ToArray()
             };
 
           });
