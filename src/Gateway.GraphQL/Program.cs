@@ -24,12 +24,6 @@ namespace Gateway.GraphQL
                 .WriteTo.Console()
                 .CreateLogger();
             
-
-            FirebaseApp.Create(new AppOptions()
-            {
-                Credential = GoogleCredential.GetApplicationDefault()
-            });
-
             try
             {
                 Log.Information("Starting web host");

@@ -10,6 +10,8 @@ using GraphQL.Authorization;
 using System.Net.Http;
 using GraphQL;
 using System.Collections.Generic;
+using FirebaseAdmin.Messaging;
+using Microsoft.Extensions.Logging;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -60,6 +62,7 @@ namespace Gateway.GraphQL.Mutations
                     }
 
                     return broadcast;
+
                 }).AuthorizeWith("AuthenticatedPolicy");
 
 

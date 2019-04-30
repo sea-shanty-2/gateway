@@ -1,10 +1,12 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using FirebaseAdmin;
 using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Services;
 using Gateway.MongoDB;
 using Gateway.MongoDB.Extensions;
+using Google.Apis.Auth.OAuth2;
 using GraphQL;
 using GraphQL.Http;
 using GraphQL.Server.Ui.Playground;
@@ -70,10 +72,24 @@ namespace Gateway.GraphQL
         public void Configure(IApplicationBuilder app)
         {
             if (Environment.IsDevelopment())
+            {
                 app
                     .UseDeveloperExceptionPage()
                     .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
                     .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager", GraphQLEndPoint = "/" });
+
+                FirebaseApp.Create(new AppOptions()
+                {
+                    Credential = GoogleCredential.FromFile(System.IO.Directory.GetCurrentDirectory() + "/.firebase/dev.json")
+                });
+            }
+            else
+            {
+               FirebaseApp.Create(new AppOptions()
+                {
+                    Credential = GoogleCredential.GetApplicationDefault()
+                }); 
+            }
 
             app
                 .UseAuthentication()
