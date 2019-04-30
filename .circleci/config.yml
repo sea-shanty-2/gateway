@@ -37,7 +37,7 @@ workflows:
          requires:
            - build
          filters:
-           brances:
+           branches:
              only: staging
       - deploy:
          requires:
