@@ -78,17 +78,17 @@ namespace Gateway.GraphQL
                     .UseGraphQLPlayground(new GraphQLPlaygroundOptions() { Path = "/playground", GraphQLEndPoint = "/" })
                     .UseGraphQLVoyager(new GraphQLVoyagerOptions() { Path = "/voyager", GraphQLEndPoint = "/" });
 
-                FirebaseApp.Create(new AppOptions()
+                /* FirebaseApp.Create(new AppOptions()
                 {
                     Credential = GoogleCredential.FromFile(System.IO.Directory.GetCurrentDirectory() + "/.firebase/dev.json")
-                });
+                }); */
             }
             else
             {
-               FirebaseApp.Create(new AppOptions()
+               /* FirebaseApp.Create(new AppOptions()
                 {
                     Credential = GoogleCredential.GetApplicationDefault()
-                }); 
+                });  */
             }
 
             app
