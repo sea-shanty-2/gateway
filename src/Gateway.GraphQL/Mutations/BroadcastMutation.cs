@@ -32,6 +32,7 @@ namespace Gateway.GraphQL.Mutations
                 {
                     // Add the broadcast entity to the database
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
                     broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
 
                     // Construct a data transfer object for the clustering service
