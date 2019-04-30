@@ -5,9 +5,11 @@ using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Types;
 using Gateway.Models;
 using Gateway.Repositories;
+using GraphQL;
 using GraphQL.Types;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
+using Newtonsoft.Json.Linq;
 
 namespace Gateway.GraphQL.Queries
 {
@@ -17,31 +19,56 @@ namespace Gateway.GraphQL.Queries
         {
             FieldAsync<ListGraphType<EventType>>("all", resolve: async context =>
             {
-                /* var client = new HttpClient
+                // Get events from the clustering service
+                var client = new HttpClient
                 {
                     BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
                 };
 
                 var response = await client.GetAsync("clustering/events");
 
-                return await response.Content.ReadAsStringAsync(); */
-                var events = new List<Event> {
-                    new Event {
-                        Broadcasts = await repository.FindRangeAsync(_ => true)
-                    }
-                };
+                // Throw error if request was unsuccessful
+                if (!response.IsSuccessStatusCode)
+                {
+                    context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                    return default;
+                }
 
+                // Parse the response data
+                var data = await response.Content.ReadAsStringAsync();
+                var jarray = JArray.Parse(data);
+
+                // Construct the event entities
+                var events = new List<Event>();
+
+                try
+                {
+                    foreach (var e in jarray.Children())
+                    {
+                        var broadcasts = new List<Broadcast>();
+
+                        foreach (JObject b in e.Children())
+                        {
+                            // Lookup each broadcast entity in the database and add to the list of broadcasts for the event
+                            broadcasts.Add(await repository.FindAsync(x => x.Id == b.GetValue("id").ToObject<string>()));
+                        }
+
+                        // Construct the event entity and add to the list of event entities
+                        events.Add(new Event
+                        {
+                            Broadcasts = broadcasts
+                        });
+                    }
+                }
+                catch (Exception e)
+                {
+                    context.Errors.Add(new ExecutionError(e.Message));
+                    return default;
+                }
+                
                 return events;
             });
-            /* Connection<BroadcastType>()
-                .Name("page")
-                .Description("Gets pages of events consisting of pages of broadcasts for the event.")
-                .Bidirectional()
-                .ResolveAsync(async context =>
-                {
-                    var entities = await repository.FindRangeAsync(_ => true);
-                    return entities.ToConnection(context);
-                }); */
+
         }
     }
 }

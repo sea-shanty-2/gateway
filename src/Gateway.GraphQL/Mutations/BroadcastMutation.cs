@@ -10,6 +10,8 @@ using GraphQL.Authorization;
 using System.Net.Http;
 using GraphQL;
 using System.Collections.Generic;
+using FirebaseAdmin.Messaging;
+using Microsoft.Extensions.Logging;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -28,9 +30,22 @@ namespace Gateway.GraphQL.Mutations
                     }),
                 resolve: async context =>
                 {
+                    // Add the broadcast entity to the database
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
                     broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
 
+
+                    // Construct a data transfer object for the clustering service
+                    var dto = new
+                    {
+                        Id = broadcast.Id,
+                        Longitude = broadcast.Location.Longitude,
+                        Latitude = broadcast.Location.Latitude,
+                        StreamDescription = broadcast.Categories
+                    };
+
+                    // Send the DTO to the clustering service
                     var client = new HttpClient
                     {
                         BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
@@ -38,20 +53,43 @@ namespace Gateway.GraphQL.Mutations
 
                     var response = await client.PostAsJsonAsync(
                         "/data/add",
-                        new List<Broadcast> { broadcast },
+                        new object[] { dto },
                         context.CancellationToken);
 
+                    // React accordingly
                     if (!response.IsSuccessStatusCode)
                     {
-                        /// TODO: Deserialize JSON and instantiate execution error properly.
-                        /// https://graphql.org/learn/validation/ 
-                        var error = await response.Content.ReadAsStringAsync();
-                        context.Errors.Add(new ExecutionError("error"));
+                        context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                        return default;
+                    }
+
+                    var relay_dto = new 
+                    {
+                        stream_url = $"{configuration.GetValue<string>("LIVESTREAM_URL")}/{broadcast.Token}.m3u8"
+                    };
+
+                    var relay_client = new HttpClient
+                    {
+                        BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
+                    };
+
+                    // Create key value pairs.
+                    var keyValues = new List<KeyValuePair<string, string>>();
+                    keyValues.Add(new KeyValuePair<string, string>("stream_url", broadcast.Token));
+
+                    var content = new FormUrlEncodedContent(keyValues);
+                    var relay_response = await relay_client.PostAsync(broadcast.Id, content);
+
+                    // React accordingly
+                    if (!relay_response.IsSuccessStatusCode)
+                    {
+                        context.Errors.Add(new ExecutionError(relay_response.ReasonPhrase));
                         return default;
                     }
 
                     return broadcast;
-                });
+
+                }).AuthorizeWith("AuthenticatedPolicy");
 
 
             this.FieldAsync<BroadcastType>(
@@ -67,25 +105,40 @@ namespace Gateway.GraphQL.Mutations
                     }),
                 resolve: async context =>
                 {
+                    // Update the broadcast entity in the database
                     var id = context.GetArgument<string>("id");
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
+
+                    // Check if the location was changed
+                    var locationUpdated = broadcast.Location != null;
                     broadcast.Activity = DateTime.UtcNow;
                     broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
-                    var client = new HttpClient
+                    if (locationUpdated)
                     {
-                        BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
-                    };
+                        // Construct a data transfer object for the clustering service
+                        var dto = new
+                        {
+                            Id = broadcast.Id,
+                            Longitude = broadcast.Location.Longitude,
+                            Latitude = broadcast.Location.Latitude,
+                            StreamDescription = broadcast.Categories
+                        };
 
-                    var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
+                        // Send the DTO to the clustering service
+                        var client = new HttpClient
+                        {
+                            BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                        };
 
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        /// TODO: Deserialize JSON and instantiate execution error properly.
-                        /// https://graphql.org/learn/validation/ 
-                        var error = await response.Content.ReadAsStringAsync();
-                        context.Errors.Add(new ExecutionError("error"));
-                        return default;
+                        var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
+
+                        // React accordingly
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                            return default;
+                        }
                     }
 
                     return broadcast;
