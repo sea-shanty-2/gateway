@@ -60,7 +60,7 @@ namespace Gateway.GraphQL.Mutations
                     }
 
                     return broadcast;
-                });
+                }).AuthorizeWith("AuthenticatedPolicy");
 
 
             this.FieldAsync<BroadcastType>(
