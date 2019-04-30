@@ -69,23 +69,27 @@ namespace Gateway.GraphQL.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    var locationUpdated = broadcast.Location != null;
                     broadcast.Activity = DateTime.UtcNow;
                     broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
-                    var client = new HttpClient
+                    if (locationUpdated)
                     {
-                        BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
-                    };
+                        var client = new HttpClient
+                        {
+                            BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                        };
 
-                    var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
+                        var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
 
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        /// TODO: Deserialize JSON and instantiate execution error properly.
-                        /// https://graphql.org/learn/validation/ 
-                        var error = await response.Content.ReadAsStringAsync();
-                        context.Errors.Add(new ExecutionError("error"));
-                        return default;
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            /// TODO: Deserialize JSON and instantiate execution error properly.
+                            /// https://graphql.org/learn/validation/ 
+                            var error = await response.Content.ReadAsStringAsync();
+                            context.Errors.Add(new ExecutionError("error"));
+                            return default;
+                        }
                     }
 
                     return broadcast;
