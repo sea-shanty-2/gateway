@@ -15,7 +15,7 @@ jobs:
       enabled: true
     steps:
       - checkout
-      - run: docker build -t envue/gateway:staging
+      - run: docker build -t envue/gateway:staging .
       - run: docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASS}
       - run: docker push envue/gateway:staging
 
