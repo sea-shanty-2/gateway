@@ -7,6 +7,7 @@ namespace Gateway.Models
         public Broadcast()
         {
             Activity = DateTime.UtcNow;
+            Token = Guid.NewGuid().ToString("N");
         }
 
         public string Id { get; set; }
@@ -16,5 +17,6 @@ namespace Gateway.Models
         public Location Location { get; set; }
         public DateTime Activity { get; set; }
         public string AccountId { get; set; }
+        public string Token { get; }
     }
 }

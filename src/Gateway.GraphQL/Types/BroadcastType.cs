@@ -41,8 +41,8 @@ namespace Gateway.GraphQL.Types
             Field<StringGraphType>(
                 "rtmp", 
                 "the broadcast rtmp server", 
-                resolve: context =>
-                    $"{configuration.GetValue<string>("RTMP_SERVER")}/{Guid.NewGuid().ToString("N")}"
+                resolve: context => 
+                    $"{configuration.GetValue<string>("RTMP_SERVER")}/{context.Source.Token}"
             );
         }
     }
