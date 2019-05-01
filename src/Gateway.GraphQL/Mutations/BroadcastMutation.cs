@@ -22,7 +22,7 @@ namespace Gateway.GraphQL.Mutations
 
             this.FieldAsync<BroadcastCreateType>(
                 "create",
-                "Create a broadcast and obtain the rtmp url",
+                "Create a broadcast and obtain the RTMP url",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<BroadcastInputType>>()
                     {
@@ -63,27 +63,27 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    var relay_dto = new 
-                    {
-                        stream_url = $"{configuration.GetValue<string>("LIVESTREAM_URL")}/{broadcast.Token}.m3u8"
-                    };
-
-                    var relay_client = new HttpClient
+                    
+                    client = new HttpClient
                     {
                         BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
                     };
 
                     // Create key value pairs.
-                    var keyValues = new List<KeyValuePair<string, string>>();
-                    keyValues.Add(new KeyValuePair<string, string>("stream_url", broadcast.Token));
+                    var keyValues = new List<KeyValuePair<string, string>> {
+                        new KeyValuePair<string, string>(
+                            "stream_url",
+                            $"{configuration.GetValue<string>("LIVESTREAM_URL")}/{broadcast.Token}.m3u8"
+                        )
+                    };
 
                     var content = new FormUrlEncodedContent(keyValues);
-                    var relay_response = await relay_client.PostAsync(broadcast.Id, content);
+                    response = await client.PostAsync(broadcast.Id, content);
 
                     // React accordingly
-                    if (!relay_response.IsSuccessStatusCode)
+                    if (!response.IsSuccessStatusCode)
                     {
-                        context.Errors.Add(new ExecutionError(relay_response.ReasonPhrase));
+                        context.Errors.Add(new ExecutionError(response.ReasonPhrase));
                         return default;
                     }
 
