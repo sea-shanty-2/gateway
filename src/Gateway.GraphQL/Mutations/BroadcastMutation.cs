@@ -63,7 +63,7 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    
+
                     client = new HttpClient
                     {
                         BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
