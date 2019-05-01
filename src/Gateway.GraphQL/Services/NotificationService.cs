@@ -17,30 +17,8 @@ namespace Gateway.GraphQL.Services
                 Credential = GoogleCredential.GetApplicationDefault()
             });
         }
-        
-        static async void SendNewBroadcastNotification(string category)
-        {
-            // The topic name can be optionally prefixed with "/topics/".
-            var topic = category;
 
-            // See documentation on defining a message payload.
-            var message = new Message()
-            {
-                Notification = new Notification()
-                {
-                    Title = "New stream",
-                    Body = $"A new stream about {category} has begun.",
-                },
-                Topic = topic,
-            };
-
-            // Send a message to the devices subscribed to the provided topic.
-            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
-            // Response is a message ID string.
-            Console.WriteLine("Successfully sent message: " + response);
-        }
-
-        static async void SendNewBroadcastNotification(string[] categories)
+        public static async void SendNewBroadcastNotification(double[] categories)
         {
             
             // Define a condition which will send to devices which are subscribed
@@ -53,7 +31,7 @@ namespace Gateway.GraphQL.Services
                 Notification = new Notification()
                 {
                     Title = "New stream",
-                    Body = $"A new stream about {String.Join(" ", categories)} has begun.",
+                    Body = $"A new stream you might be interested in has begun.",
                 },
                 Condition = condition,
             };
@@ -63,9 +41,9 @@ namespace Gateway.GraphQL.Services
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             // Response is a message ID string.
             Console.WriteLine("Successfully sent message: " + response);
-
         }
-        private static string CreateCondition(string[] topics)
+
+        private static string CreateCondition(double[] topics)
         {
             var condition = new string("");
             for (int i = 0; i < topics.Length; i++)
@@ -74,7 +52,7 @@ namespace Gateway.GraphQL.Services
                 {
                     condition += " || ";
                 }
-                condition += $"'{topics[i]}' in topics";
+                condition += $"'Category:{i}' in topics";
             }
             
             return condition;
