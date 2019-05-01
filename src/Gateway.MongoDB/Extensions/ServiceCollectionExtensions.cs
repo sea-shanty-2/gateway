@@ -20,7 +20,7 @@ namespace Gateway.MongoDB.Extensions
         /// Adds the mongoDB repository dependency injection. 
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="connectionString">If not specified, an in memory mongo database is used.</param>
+        /// <param name="connectionString"></param>
         /// <param name="drop">If true, the existing data (if any) will be dropped.</param>
         /// <returns></returns>
         public static IServiceCollection AddMongoDBRepositories(this IServiceCollection services, string connectionString, bool drop = false)
