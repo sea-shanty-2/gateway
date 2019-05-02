@@ -93,6 +93,56 @@ namespace Gateway.GraphQL.Mutations
 
 
             this.FieldAsync<BroadcastType>(
+                "join",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>()
+                    {
+                        Name = "id"
+                    }),
+                
+                resolve: async context =>
+                {
+                    // Update the broadcast entity in the database
+                    var id = context.GetArgument<string>("id");
+                    var broadcast = context.GetArgument<Broadcast>("broadcast");
+
+                    // Check if the location was changed
+                    var locationUpdated = broadcast.Location != null;
+                    broadcast.Activity = DateTime.UtcNow;
+                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+
+                    if (locationUpdated)
+                    {
+                        // Construct a data transfer object for the clustering service
+                        var dto = new
+                        {
+                            Id = broadcast.Id,
+                            Longitude = broadcast.Location.Longitude,
+                            Latitude = broadcast.Location.Latitude,
+                            StreamDescription = broadcast.Categories
+                        };
+
+                        // Send the DTO to the clustering service
+                        var client = new HttpClient
+                        {
+                            BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                        };
+
+                        var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
+
+                        // React accordingly
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                            return default;
+                        }
+                    }
+
+                    return broadcast;
+                }
+            );
+
+            this.FieldAsync<BroadcastType>(
                 "update",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()

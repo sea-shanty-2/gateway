@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Gateway.Models
 {
@@ -18,5 +19,7 @@ namespace Gateway.Models
         public DateTime Activity { get; set; }
         public string AccountId { get; set; }
         public string Token { get; }
+        public List<(string, DateTime)> JoinedTimeStamps { get; set; }
+        public List<(string, DateTime)> LeftTimeStamps { get; set; }
     }
 }
