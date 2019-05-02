@@ -86,6 +86,8 @@ namespace Gateway.GraphQL.Mutations
                         context.Errors.Add(new ExecutionError(response.ReasonPhrase));
                         return default;
                     }
+                    
+                    SendNewBroadcastNotification(broadcast.Categories);
 
                     return broadcast;
 
@@ -157,6 +159,64 @@ namespace Gateway.GraphQL.Mutations
                     await repository.RemoveAsync(x => x.Id == id, context.CancellationToken);
                     return id;
                 });
+        }
+        
+        private async void SendNewBroadcastNotification(double[] categories)
+        {
+            
+            // Define a condition which will send to devices which are subscribed
+            var condition = CreateCondition(categories);
+            
+            
+            var message = new Message()
+            {
+                Notification = new Notification()
+                {
+                    Title = "New stream",
+                    Body = $"A new stream you might be interested in has begun.",
+                           //$"DEBUG: Condition: {condition}, Categories: [{String.Join("", categories)}]",
+                },
+                Condition = condition,
+                Android = new AndroidConfig()
+                {
+                    // Set the limit where the notification is no longer relevant.
+                    TimeToLive = TimeSpan.FromMinutes(15),
+                },
+            };
+
+            // Send a message to devices subscribed to the combination of topics
+            // specified by the provided condition.
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            // Response is a message ID string.
+            
+            
+            //Console.WriteLine("Successfully sent message: " + response);
+
+        }
+        private string CreateCondition(double[] topics)
+        {
+            var first = true;
+            var condition = new string("");
+            for (int i = 0; i < topics.Length; i++)
+            {
+                if (topics[i] == 0.0)
+                {
+                    continue;
+                }
+                
+                if (!first)
+                {
+                    condition += " || ";
+                }
+                else
+                {
+                    first = false;
+                }
+                
+                condition += $"'Category{i}' in topics";
+            }
+            
+            return condition;
         }
     }
 }
