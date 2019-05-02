@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 
 namespace Gateway.Models
 {
@@ -9,6 +10,9 @@ namespace Gateway.Models
         {
             Activity = DateTime.UtcNow;
             Token = Guid.NewGuid().ToString("N");
+            
+            JoinedTimeStamps = new List<ViewerDateTimePair>();
+            LeftTimeStamps = new List<ViewerDateTimePair>();
         }
 
         public string Id { get; set; }
@@ -19,7 +23,19 @@ namespace Gateway.Models
         public DateTime Activity { get; set; }
         public string AccountId { get; set; }
         public string Token { get; }
-        public List<(string, DateTime)> JoinedTimeStamps { get; set; }
-        public List<(string, DateTime)> LeftTimeStamps { get; set; }
+        public List<ViewerDateTimePair> JoinedTimeStamps { get; set; }
+        public List<ViewerDateTimePair> LeftTimeStamps { get; set; }
+    }
+
+    public class ViewerDateTimePair
+    {
+        public string Id { get; set; }
+        public DateTime Time { get; set; }
+
+        public ViewerDateTimePair(string id, DateTime dateTime)
+        {
+            Id = id;
+            Time = dateTime;
+        }
     }
 }

@@ -10,6 +10,7 @@ using GraphQL.Authorization;
 using System.Net.Http;
 using GraphQL;
 using System.Collections.Generic;
+using Bogus.DataSets;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
 
@@ -91,7 +92,7 @@ namespace Gateway.GraphQL.Mutations
                 }).AuthorizeWith("AuthenticatedPolicy");
 
 
-            this.FieldAsync<BroadcastType>(
+            this.FieldAsync<IdGraphType>(
                 "join",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
@@ -102,42 +103,36 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     // Update the broadcast entity in the database
-                    var id = context.GetArgument<string>("id");
-                    var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    var broadcastId = context.GetArgument<string>("id");
+                    var viewerId = context.UserContext.As<UserContext>().User.Identity;
 
-                    // Check if the location was changed
-                    var locationUpdated = broadcast.Location != null;
-                    broadcast.Activity = DateTime.UtcNow;
-                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
+                    broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
+                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
-                    if (locationUpdated)
+                    return broadcastId;
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
+            
+            this.FieldAsync<IdGraphType>(
+                "leave",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>()
                     {
-                        // Construct a data transfer object for the clustering service
-                        var dto = new
-                        {
-                            Id = broadcast.Id,
-                            Longitude = broadcast.Location.Longitude,
-                            Latitude = broadcast.Location.Latitude,
-                            StreamDescription = broadcast.Categories
-                        };
+                        Name = "id"
+                    }),
+                
+                resolve: async context =>
+                {
+                    // Update the broadcast entity in the database
+                    var broadcastId = context.GetArgument<string>("id");
+                    var viewerId = context.UserContext.As<UserContext>().User.Identity;
 
-                        // Send the DTO to the clustering service
-                        var client = new HttpClient
-                        {
-                            BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
-                        };
+                    var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
+                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
+                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
-                        var response = await client.PostAsJsonAsync("/data/update", broadcast, context.CancellationToken);
-
-                        // React accordingly
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            context.Errors.Add(new ExecutionError(response.ReasonPhrase));
-                            return default;
-                        }
-                    }
-
-                    return broadcast;
+                    return broadcastId;
                 }
             );
 
