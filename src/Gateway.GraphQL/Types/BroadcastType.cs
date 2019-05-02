@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Gateway.Models;
 using Gateway.Repositories;
 using GraphQL.Types;
@@ -14,6 +15,8 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Location, type: typeof(LocationType));
             Field(x => x.Activity, type: typeof(DateTimeGraphType));
             Field(x => x.Categories);
+            Field(x => x.JoinedTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
+            Field(x => x.LeftTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
             FieldAsync<AccountType>(
                 "broadcaster",
                 "the broadcast owner",
