@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Types;
@@ -50,14 +51,22 @@ namespace Gateway.GraphQL.Queries
                         foreach (JObject b in e.Children())
                         {
                             // Lookup each broadcast entity in the database and add to the list of broadcasts for the event
-                            broadcasts.Add(await repository.FindAsync(x => x.Id == b.GetValue("id").ToObject<string>()));
+                            var broadcast = await repository.FindAsync(x => x.Id == b.GetValue("id").ToObject<string>());
+
+                            if (broadcast != null)
+                            {
+                                broadcasts.Add(broadcast);
+                            }
                         }
 
-                        // Construct the event entity and add to the list of event entities
-                        events.Add(new Event
+                        // Create the event if the list of broadcasts is not empty
+                        if (broadcasts.Any())
                         {
-                            Broadcasts = broadcasts
-                        });
+                            events.Add(new Event
+                            {
+                                Broadcasts = broadcasts
+                            });
+                        }
                     }
                 }
                 catch (Exception e)
@@ -65,7 +74,7 @@ namespace Gateway.GraphQL.Queries
                     context.Errors.Add(new ExecutionError(e.Message));
                     return default;
                 }
-                
+
                 return events;
             });
 
