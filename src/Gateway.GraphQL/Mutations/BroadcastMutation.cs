@@ -63,7 +63,6 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-
                     client = new HttpClient
                     {
                         BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
@@ -195,7 +194,7 @@ namespace Gateway.GraphQL.Mutations
                 });
 
             this.FieldAsync<IdGraphType>(
-                "delete",
+                "stop",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
                     {
@@ -204,9 +203,57 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    await repository.RemoveAsync(x => x.Id == id, context.CancellationToken);
+                    var identity = context.UserContext.As<UserContext>().User.Identity;
+                    
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    // Ensure only broadcaster can stop broadcast
+                    if (broadcast.AccountId != identity.Name) {
+                        context.Errors.Add(new ExecutionError("Not authorized to stop broadcast"));
+                        return default;
+                    }
+
+                    var dto = new
+                    {
+                        Id = broadcast.Id,
+                        Longitude = broadcast.Location.Longitude,
+                        Latitude = broadcast.Location.Latitude,
+                        StreamDescription = broadcast.Categories
+                    };
+
+                    var client = new HttpClient
+                    {
+                        BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                    };
+
+                    var response = await client.PostAsJsonAsync(
+                        "/data/remove",
+                        dto,
+                        context.CancellationToken);
+
+                    // React accordingly
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                        return default;
+                    }
+
+                    client = new HttpClient
+                    {
+                        BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
+                    };
+
+                    response = await client.DeleteAsync(id);
+
+                    // React accordingly
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                        return default;
+                    }
+
                     return id;
-                });
+                }).AuthorizeWith("AuthenticatedPolicy");
         }
     }
 }
