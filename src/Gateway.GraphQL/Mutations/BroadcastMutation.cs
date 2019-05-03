@@ -190,7 +190,7 @@ namespace Gateway.GraphQL.Mutations
                     return broadcast;
                 });
 
-            this.FieldAsync<IdGraphType>(
+            this.FieldAsync<BroadcastStopType>(
                 "stop",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
@@ -249,7 +249,7 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    return id;
+                    return broadcast;
                 }).AuthorizeWith("AuthenticatedPolicy");
         }
         
