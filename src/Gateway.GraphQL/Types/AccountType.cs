@@ -14,6 +14,7 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Id);
             Field(x => x.DisplayName);
             Field(x => x.Categories);
+            Field(x => x.Score);
 
             Connection<BroadcastType>()
                 .Name("broadcasts")

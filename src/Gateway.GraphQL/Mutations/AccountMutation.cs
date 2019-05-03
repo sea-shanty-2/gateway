@@ -5,6 +5,7 @@ using GraphQL.Types;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using GraphQL.Authorization;
+using GraphQL;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -27,8 +28,24 @@ namespace Gateway.GraphQL.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var account = context.GetArgument<Account>("account");
+                    var identity = context.UserContext.As<UserContext>().User.Identity;
+
+                    if (id != identity.Name)
+                    {
+                        context.Errors.Add(new ExecutionError("Not authorized to update account"));
+                        return default;
+                    }
+
+                    if (account.Score != default)
+                    {
+                        var response = await 
+                            repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                        
+                        account.Score += response.Score;
+                    }
+
                     return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
-                });
+                }).AuthorizeWith("AuthenticatedPolicy");
 
             this.FieldAsync<IdGraphType>(
                 "delete",
