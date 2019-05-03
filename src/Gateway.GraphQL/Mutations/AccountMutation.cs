@@ -27,6 +27,15 @@ namespace Gateway.GraphQL.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var account = context.GetArgument<Account>("account");
+
+                    if (account.Score != default)
+                    {
+                        var response = await 
+                            repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                        
+                        account.Score += response.Score;
+                    }
+
                     return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
                 });
 
