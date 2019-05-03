@@ -10,6 +10,7 @@ using GraphQL.Authorization;
 using System.Net.Http;
 using GraphQL;
 using System.Collections.Generic;
+using Bogus.DataSets;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
 
@@ -92,6 +93,50 @@ namespace Gateway.GraphQL.Mutations
 
                 }).AuthorizeWith("AuthenticatedPolicy");
 
+
+            this.FieldAsync<IdGraphType>(
+                "join",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>()
+                    {
+                        Name = "id"
+                    }),
+                
+                resolve: async context =>
+                {
+                    // Update the broadcast entity in the database
+                    var broadcastId = context.GetArgument<string>("id");
+                    var viewerId = context.UserContext.As<UserContext>().User.Identity;
+
+                    var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
+                    broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
+                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+
+                    return broadcastId;
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
+            
+            this.FieldAsync<IdGraphType>(
+                "leave",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>()
+                    {
+                        Name = "id"
+                    }),
+                
+                resolve: async context =>
+                {
+                    // Update the broadcast entity in the database
+                    var broadcastId = context.GetArgument<string>("id");
+                    var viewerId = context.UserContext.As<UserContext>().User.Identity;
+
+                    var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
+                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
+                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+
+                    return broadcastId;
+                }
+            );
 
             this.FieldAsync<BroadcastType>(
                 "update",
