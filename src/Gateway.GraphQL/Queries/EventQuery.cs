@@ -78,7 +78,7 @@ namespace Gateway.GraphQL.Queries
                 return events;
             });
             
-            FieldAsync<ListGraphType<EventType>>(
+            FieldAsync<EventType>(
                 "containing", 
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>
