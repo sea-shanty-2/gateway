@@ -77,6 +77,65 @@ namespace Gateway.GraphQL.Queries
 
                 return events;
             });
+            
+            FieldAsync<ListGraphType<EventType>>(
+                "containing", 
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>
+                    {
+                        Name = "id",
+                        Description = "Unique identifier of the broadcast whose event is to be found.",
+                    }),
+                
+                resolve: async context =>
+                {
+                    var queriedId = context.GetArgument<string>("id");
+                    
+                    // Get events from the clustering service
+                    var client = new HttpClient
+                    {
+                        BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                    };
+    
+                    var response = await client.GetAsync("clustering/events");
+    
+                    // Throw error if request was unsuccessful
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        context.Errors.Add(new ExecutionError(response.ReasonPhrase));
+                        return default;
+                    }
+    
+                    // Parse the response data
+                    var data = await response.Content.ReadAsStringAsync();
+                    var jarray = JArray.Parse(data);
+                    
+                    // Prepare return event
+                    var queriedEvent = new Event();
+    
+                    try
+                    {
+                        // Go through all event clusters
+                        foreach (var e in jarray.Children())
+                        {
+                            var broadcastIds = e.Children<JObject>().Select(b => b.GetValue("id").ToObject<string>()).ToArray();
+                            // If an event contains our broadcaster, return that event
+                            if (broadcastIds.Any(id => id == queriedId))
+                            {
+                                queriedEvent.Broadcasts = broadcastIds.Select(id =>
+                                    repository.FindAsync(b => b.Id == id).GetAwaiter().GetResult());
+                            }
+                        }
+                    }
+                    
+                    catch (Exception e)
+                    {
+                        context.Errors.Add(new ExecutionError(e.Message));
+                        return default;
+                    }
+
+                    return queriedEvent;
+                });
 
         }
     }
