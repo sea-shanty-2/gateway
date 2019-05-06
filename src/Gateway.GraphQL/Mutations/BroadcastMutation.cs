@@ -202,8 +202,12 @@ namespace Gateway.GraphQL.Mutations
                     var id = context.GetArgument<string>("id");
                     var identity = context.UserContext.As<UserContext>().User.Identity;
                     
+                    // Get broadcast 
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
-                    await repository.RemoveAsync(x => x.Id == id);  // TODO: Consider using an "expired" field instead 
+
+                    // Set expired to true
+                    broadcast.Expired = true;
+                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     // Ensure only broadcaster can stop broadcast
                     if (broadcast.AccountId != identity.Name) {
@@ -211,6 +215,7 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
+                    // Remove broadcast from clustering
                     var dto = new
                     {
                         Id = broadcast.Id,
@@ -236,6 +241,7 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
+                    // Remove broadcast from relay.
                     client = new HttpClient
                     {
                         BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
