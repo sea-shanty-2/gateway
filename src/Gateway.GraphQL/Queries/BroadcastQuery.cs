@@ -63,7 +63,7 @@ namespace Gateway.GraphQL.Queries
                 .Bidirectional()
                 .ResolveAsync(async context => {
                     var expiration = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1));
-                    var entities = await repository.FindRangeAsync(x => x.Activity.CompareTo(expiration) > 0);
+                    var entities = await repository.FindRangeAsync(x => x.Activity.CompareTo(expiration) > 0 && !x.Expired);
                     return entities.ToConnection(context);
                 });
         }
