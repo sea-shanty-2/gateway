@@ -4,6 +4,8 @@ using Gateway.GraphQL.Types;
 using Gateway.Models;
 using Gateway.Repositories;
 using GraphQL.Types;
+using Microsoft.AspNetCore.Hosting.Internal;
+using Microsoft.AspNetCore.Http.Internal;
 using MongoDB.Driver;
 
 namespace Gateway.GraphQL.Queries
@@ -28,6 +30,23 @@ namespace Gateway.GraphQL.Queries
                     return await repository.FindAsync(x => x.Id == id, context.CancellationToken);
                 });
 
+            FieldAsync<IntGraphType>(
+                "viewer_count",
+                "Get the number of viewers on a specific broadcast",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>
+                    {
+                        Name = "id",
+                        Description = "Unique identifier of the broadcast."
+                    }), 
+                resolve: async context =>
+                {
+                    var id = context.GetArgument<string>("id");
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    return broadcast.JoinedTimeStamps.Count - broadcast.LeftTimeStamps.Count;
+                });
+
             Connection<BroadcastType>()
                 .Name("page")
                 .Description("Gets pages of broadcasts.")
@@ -44,7 +63,7 @@ namespace Gateway.GraphQL.Queries
                 .Bidirectional()
                 .ResolveAsync(async context => {
                     var expiration = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1));
-                    var entities = await repository.FindRangeAsync(x => x.Activity.CompareTo(expiration) > 0);
+                    var entities = await repository.FindRangeAsync(x => x.Activity.CompareTo(expiration) > 0 && !x.Expired);
                     return entities.ToConnection(context);
                 });
         }
