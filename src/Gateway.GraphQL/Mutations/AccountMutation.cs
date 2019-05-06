@@ -14,6 +14,23 @@ namespace Gateway.GraphQL.Mutations
         public AccountMutation(IRepository<Account> repository)
         {
             this.FieldAsync<AccountType>(
+                "me",
+                "mutate the logged in account",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<AccountUpdateInputType>>()
+                    {
+                        Name = "account"
+                    }
+                ),
+                resolve: async context =>
+                {
+                    var id = context.UserContext.As<UserContext>().User.Identity.Name;
+                    var account = context.GetArgument<Account>("account");
+                    return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
+
+            this.FieldAsync<AccountType>(
                 "update",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()
