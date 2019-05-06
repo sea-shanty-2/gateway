@@ -63,6 +63,10 @@ namespace Gateway.MongoDB.Repositories
             return await Task.Run(() => _collection.AsQueryable().Where(expression).AsEnumerable());
         }
 
+        public async Task<IQueryable<T>> QueryAsync(CancellationToken cancellationToken) {
+            return await Task.Run(() => _collection.AsQueryable().Where(x => true).AsQueryable());
+        }
+
         public Task RemoveAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
         {
             return _collection.DeleteOneAsync(expression, null, cancellationToken);
