@@ -21,6 +21,7 @@ namespace Gateway.Models
         public double Stability { get; set; }
         public Location Location { get; set; }
         public DateTime Activity { get; set; }
+        public Boolean Expired { get; set; }
         public string AccountId { get; set; }
         public string Token { get; }
         public List<ViewerDateTimePair> JoinedTimeStamps { get; set; }
