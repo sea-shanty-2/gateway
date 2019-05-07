@@ -109,7 +109,7 @@ namespace Gateway.GraphQL.Mutations
                     var viewerId = context.UserContext.As<UserContext>().User.Identity;
 
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
-                    broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
+                    broadcast.JoinedTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
                     await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
@@ -131,7 +131,7 @@ namespace Gateway.GraphQL.Mutations
                     var viewerId = context.UserContext.As<UserContext>().User.Identity;
 
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
-                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
+                    broadcast.LeftTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
                     await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;

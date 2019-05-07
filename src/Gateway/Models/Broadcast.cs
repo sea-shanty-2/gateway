@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Security.Principal;
 
@@ -11,8 +12,8 @@ namespace Gateway.Models
             Activity = DateTime.UtcNow;
             Token = Guid.NewGuid().ToString("N");
             
-            JoinedTimeStamps = new List<ViewerDateTimePair>();
-            LeftTimeStamps = new List<ViewerDateTimePair>();
+            JoinedTimeStamps = new ConcurrentStack<ViewerDateTimePair>();
+            LeftTimeStamps = new ConcurrentStack<ViewerDateTimePair>();
         }
 
         public string Id { get; set; }
@@ -24,8 +25,8 @@ namespace Gateway.Models
         public Boolean Expired { get; set; }
         public string AccountId { get; set; }
         public string Token { get; }
-        public List<ViewerDateTimePair> JoinedTimeStamps { get; set; }
-        public List<ViewerDateTimePair> LeftTimeStamps { get; set; }
+        public ConcurrentStack<ViewerDateTimePair> JoinedTimeStamps { get; set; }
+        public ConcurrentStack<ViewerDateTimePair> LeftTimeStamps { get; set; }
     }
 
     public class ViewerDateTimePair
