@@ -38,6 +38,22 @@ namespace Gateway.GraphQL.Types
                 }
             );
 
+            FieldAsync<FloatGraphType>(
+                "percentile",
+                "how many accounts above account in percent",
+                resolve: async context => {
+                    var accountScore = context.Source.Score; 
+                    var accounts = await accountRepository.FindRangeAsync(x => true, context.CancellationToken);
+
+                    // Have to be doubles
+                    double greater = accounts.Count(a => a.Score > accountScore);
+                    double total = accounts.Count();
+
+                    return (greater / total) * 100;
+
+                }
+            );
+
             Connection<BroadcastType>()
                 .Name("broadcasts")
                 .Description("Gets a page of broadcasts associated with the account.")
