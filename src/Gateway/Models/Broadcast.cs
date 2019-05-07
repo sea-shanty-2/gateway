@@ -31,12 +31,12 @@ namespace Gateway.Models
     public class ViewerDateTimePair
     {
         public string Id { get; set; }
-        public DateTime Time { get; set; }
+        public long Time { get; set; }
 
-        public ViewerDateTimePair(string id, DateTime dateTime)
+        public ViewerDateTimePair(string id, long ticks)
         {
             Id = id;
-            Time = dateTime;
+            Time = ticks;
         }
     }
 }
