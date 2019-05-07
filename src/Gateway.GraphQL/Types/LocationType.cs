@@ -15,6 +15,7 @@ namespace Gateway.GraphQL.Types
     public class LocationInputType : InputObjectGraphType<Location>
     {
         public LocationInputType() {
+            
             Field(x => x.Longitude);
             Field(x => x.Latitude);
         }
