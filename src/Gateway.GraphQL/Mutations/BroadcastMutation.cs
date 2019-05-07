@@ -225,7 +225,10 @@ namespace Gateway.GraphQL.Mutations
 
                     // Get broadcast 
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
-                    await repository.RemoveAsync(x => x.Id == id);  // TODO: Consider using an "expired" field instead 
+                    
+                    // Set expired to true
+                    broadcast.Expired = true;
+                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     // Ensure only broadcaster can stop broadcast
                     if (broadcast.AccountId != identity.Name)
