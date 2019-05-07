@@ -34,8 +34,10 @@ namespace Gateway.GraphQL.Mutations
                     }),
                 resolve: async context =>
                 {
+                    // Retrieve the broadcast entity from the argument dictionary
+                    var broadcast = context.GetArgument<Broadcast>("broadcast"); 
+                    
                     // Add the broadcast entity to the database
-                    var broadcast = context.GetArgument<Broadcast>("broadcast");
                     broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
                     broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
 
@@ -89,7 +91,7 @@ namespace Gateway.GraphQL.Mutations
                         context.Errors.Add(new ExecutionError(response.ReasonPhrase));
                         return default;
                     }
-                    
+
                     SendNewBroadcastNotification(broadcast.Categories);
 
                     return broadcast;
@@ -104,7 +106,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     }),
-                
+
                 resolve: async context =>
                 {
                     // Update the broadcast entity in the database
@@ -126,7 +128,7 @@ namespace Gateway.GraphQL.Mutations
                     return broadcastId;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
-            
+
             this.FieldAsync<IdGraphType>(
                 "leave",
                 arguments: new QueryArguments(
@@ -134,7 +136,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     }),
-                
+
                 resolve: async context =>
                 {
                     // Update the broadcast entity in the database
@@ -220,12 +222,14 @@ namespace Gateway.GraphQL.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var identity = context.UserContext.As<UserContext>().User.Identity;
-                    
+
+                    // Get broadcast 
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
                     await repository.RemoveAsync(x => x.Id == id);  // TODO: Consider using an "expired" field instead 
 
                     // Ensure only broadcaster can stop broadcast
-                    if (broadcast.AccountId != identity.Name) {
+                    if (broadcast.AccountId != identity.Name)
+                    {
                         context.Errors.Add(new ExecutionError("Not authorized to stop broadcast"));
                         return default;
                     }
@@ -272,10 +276,10 @@ namespace Gateway.GraphQL.Mutations
                     return broadcast;
                 }).AuthorizeWith("AuthenticatedPolicy");
         }
-        
+
         private async void SendNewBroadcastNotification(double[] categories)
         {
-            
+
             // Define a condition which will send to devices which are subscribed
             var condition = CreateCondition(categories);
             if (condition.IsEmpty())
@@ -290,7 +294,7 @@ namespace Gateway.GraphQL.Mutations
                 {
                     Title = "New stream",
                     Body = $"A new stream you might be interested in has begun.",
-                           //$"DEBUG: Condition: {condition}, Categories: [{String.Join("", categories)}]",
+                    //$"DEBUG: Condition: {condition}, Categories: [{String.Join("", categories)}]",
                 },
                 Condition = condition,
                 Android = new AndroidConfig()
@@ -311,8 +315,8 @@ namespace Gateway.GraphQL.Mutations
                 Log.Error(ex, "Firebase Error. Error while sending notification.");
             }
             // Response is a message ID string.
-            
-            
+
+
             //Console.WriteLine("Successfully sent message: " + response);
 
         }
