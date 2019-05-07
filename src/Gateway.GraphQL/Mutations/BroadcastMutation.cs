@@ -118,7 +118,7 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
+                    broadcast.JoinedTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
                     await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
@@ -148,7 +148,7 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
+                    broadcast.LeftTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
                     await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
