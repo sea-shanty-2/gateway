@@ -20,6 +20,8 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Bitrate, nullable: true);
             Field(x => x.Stability, nullable: true);
             Field(x => x.Activity, type: typeof(DateTimeGraphType), nullable: true);
+            Field(x => x.PositiveRatings, nullable: true);
+            Field(x => x.NegativeRatings, nullable: true);
         }
     }
 } 

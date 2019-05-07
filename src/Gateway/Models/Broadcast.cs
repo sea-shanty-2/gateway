@@ -25,6 +25,8 @@ namespace Gateway.Models
         public Boolean Expired { get; set; }
         public string AccountId { get; set; }
         public string Token { get; }
+        public int PositiveRatings { get; set; }
+        public int NegativeRatings { get; set; }
         public ConcurrentStack<ViewerDateTimePair> JoinedTimeStamps { get; set; }
         public ConcurrentStack<ViewerDateTimePair> LeftTimeStamps { get; set; }
     }
