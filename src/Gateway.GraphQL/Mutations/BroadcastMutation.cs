@@ -110,6 +110,14 @@ namespace Gateway.GraphQL.Mutations
                     var viewerId = context.UserContext.As<UserContext>().User.Identity;
 
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
+                    var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
+                    var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
+                    if (joined > left) 
+                    {
+                        context.Errors.Add(new ExecutionError("The account have not left the broadcast and cannot enter."));
+                        return default;
+                    }
+
                     broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTime.Now));
                     await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
@@ -145,7 +153,7 @@ namespace Gateway.GraphQL.Mutations
 
                     return broadcastId;
                 }
-            );
+            ).AuthorizeWith("AuthenticatedPolicy");
 
             this.FieldAsync<BroadcastType>(
                 "update",
