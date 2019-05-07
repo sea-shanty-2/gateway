@@ -10,10 +10,12 @@ using GraphQL.Authorization;
 using System.Net.Http;
 using GraphQL;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Bogus.DataSets;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using Serilog;
 
 namespace Gateway.GraphQL.Mutations
 {
@@ -219,12 +221,8 @@ namespace Gateway.GraphQL.Mutations
                     var id = context.GetArgument<string>("id");
                     var identity = context.UserContext.As<UserContext>().User.Identity;
                     
-                    // Get broadcast 
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
-
-                    // Set expired to true
-                    broadcast.Expired = true;
-                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    await repository.RemoveAsync(x => x.Id == id);  // TODO: Consider using an "expired" field instead 
 
                     // Ensure only broadcaster can stop broadcast
                     if (broadcast.AccountId != identity.Name) {
@@ -232,7 +230,6 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    // Remove broadcast from clustering
                     var dto = new
                     {
                         Id = broadcast.Id,
@@ -258,7 +255,6 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    // Remove broadcast from relay.
                     client = new HttpClient
                     {
                         BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
@@ -282,6 +278,10 @@ namespace Gateway.GraphQL.Mutations
             
             // Define a condition which will send to devices which are subscribed
             var condition = CreateCondition(categories);
+            if (condition.IsEmpty())
+            {
+                Log.Error("Invalid condition. Condition cannot be empty.");
+            }
             
             
             var message = new Message()
@@ -302,7 +302,14 @@ namespace Gateway.GraphQL.Mutations
 
             // Send a message to devices subscribed to the combination of topics
             // specified by the provided condition.
-            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            try
+            {
+                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Firebase Error. Error while sending notification.");
+            }
             // Response is a message ID string.
             
             
@@ -313,25 +320,26 @@ namespace Gateway.GraphQL.Mutations
         {
             var first = true;
             var condition = new string("");
-            for (int i = 0; i < topics.Length; i++)
+            for (var i = 0; i < topics.Length; i++)
             {
-                if (topics[i] == 0.0)
+                switch (topics[i])
                 {
-                    continue;
+                    case 0.0:
+                        continue;
+                    case 1.0:
+                        if (!first)
+                            condition += " || ";
+                        else
+                            first = false;
+                        
+                        condition += $"'Category{i}' in topics";
+                        break;
+                    default:
+                        Log.Error("Invalid category value");
+                        continue;
+
                 }
-                
-                if (!first)
-                {
-                    condition += " || ";
-                }
-                else
-                {
-                    first = false;
-                }
-                
-                condition += $"'Category{i}' in topics";
             }
-            
             return condition;
         }
     }
