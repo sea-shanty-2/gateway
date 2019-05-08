@@ -32,8 +32,10 @@ namespace Gateway.GraphQL.Mutations
                     }),
                 resolve: async context =>
                 {
+                    // Retrieve the broadcast entity from the argument dictionary
+                    var broadcast = context.GetArgument<Broadcast>("broadcast"); 
+                    
                     // Add the broadcast entity to the database
-                    var broadcast = context.GetArgument<Broadcast>("broadcast");
                     broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
                     broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
 
