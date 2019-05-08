@@ -42,39 +42,137 @@ namespace Gateway.MongoDB.Repositories
 
         public async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
         {
-            await _collection.InsertOneAsync(entity, null, cancellationToken);
+            await _collection.InsertOneAsync(
+                entity,
+                new InsertOneOptions
+                {
+
+                },
+                cancellationToken
+            );
+
             return entity;
         }
 
         public async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
-            await _collection.InsertManyAsync(entities, null, cancellationToken);
+            await _collection.InsertManyAsync(
+                entities,
+                new InsertManyOptions
+                {
+
+                },
+                cancellationToken
+            );
             return entities;
         }
 
         public async Task<T> FindAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
         {
-            var entities = await _collection.FindAsync(expression, null, cancellationToken);
-            return await entities.FirstOrDefaultAsync(cancellationToken);
+            IAsyncCursor<T> cursor = default;
+            T entity = default;
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                cursor = await _collection.FindAsync(
+                    expression,
+                    new FindOptions<T, T>
+                    {
+                        Limit = 1
+                    },
+                    cancellationToken
+                );
+                entity = await cursor.FirstOrDefaultAsync(cancellationToken);
+
+                if (entity != default)
+                {
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                }
+            }
+
+            return entity;
         }
 
         public async Task<IEnumerable<T>> FindRangeAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken)
         {
-            return await Task.Run(() => _collection.AsQueryable().Where(expression).AsEnumerable());
+            IEnumerable<T> entities = default;
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                entities = await Task.Run(() => _collection.AsQueryable().Where(expression).AsEnumerable());
+
+                if (entities.Any())
+                {
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                }
+            }
+
+            return entities;
         }
 
-        public async Task<IQueryable<T>> QueryAsync(CancellationToken cancellationToken) {
-            return await Task.Run(() => _collection.AsQueryable().Where(x => true).AsQueryable());
-        }
 
-        public Task RemoveAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
+        public async Task RemoveAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
         {
-            return _collection.DeleteOneAsync(expression, null, cancellationToken);
+            DeleteResult deletion = default;
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                deletion = await _collection.DeleteOneAsync(
+                    expression,
+                    new DeleteOptions
+                    {
+
+                    },
+                    cancellationToken
+                );
+
+                if (deletion.IsAcknowledged)
+                {
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                }
+            }
+
+            return;
         }
 
-        public Task RemoveRangeAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
+        public async Task RemoveRangeAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
         {
-            return _collection.DeleteManyAsync(expression, null, cancellationToken);
+            DeleteResult deletion = default;
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                deletion = await _collection.DeleteManyAsync(
+                    expression,
+                    new DeleteOptions
+                    {
+                        
+                    },
+                    cancellationToken
+                );
+
+                if (deletion.IsAcknowledged)
+                {
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                }
+            }
+
+            return;
         }
 
         public async Task<T> UpdateAsync(Expression<Func<T, bool>> expression, T entity, CancellationToken cancellationToken = default)
@@ -85,12 +183,12 @@ namespace Gateway.MongoDB.Repositories
         }
 
         public async Task<IEnumerable<T>> UpdateRangeAsync(Expression<Func<T, bool>> expression, T entity, CancellationToken cancellationToken = default)
-        {  
+        {
             var tasks = (await FindRangeAsync(expression, cancellationToken))
                 .Select(async e =>
                     await UpdateAsync(x => x.Id == e.Id, entity, cancellationToken)
                 );
-                
+
             return await Task.WhenAll(tasks);
         }
 

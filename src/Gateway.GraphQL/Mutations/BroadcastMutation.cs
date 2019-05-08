@@ -114,14 +114,14 @@ namespace Gateway.GraphQL.Mutations
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
                     var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
                     var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
-                    if (joined > left) 
+                    if (joined > left)
                     {
                         context.Errors.Add(new ExecutionError("The account have not left the broadcast and cannot enter."));
                         return default;
                     }
 
-                    broadcast.JoinedTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
-                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+                    broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
+                    broadcast = await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
                 }
@@ -144,18 +144,55 @@ namespace Gateway.GraphQL.Mutations
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
                     var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
                     var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
-                    if (joined <= left) 
+                    if (joined <= left)
                     {
                         context.Errors.Add(new ExecutionError("The account have not joined the broadcast and can therefore not leave."));
                         return default;
                     }
 
-                    broadcast.LeftTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
-                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
+                    broadcast = await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
+
+            this.FieldAsync<BroadcastType>(
+                "report",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>()
+                    {
+                        Name = "id"
+                    },
+                    new QueryArgument<NonNullGraphType<StringGraphType>>()
+                    {
+                        Name = "message"
+                    }
+                ),
+                resolve: async context =>
+                {
+                    // Get the id argument value
+                    var id = context.GetArgument<string>("id");
+                    
+                    // Validate broadcast id
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    // Inform the user if the id is invalid
+                    if (broadcast == default) {
+                        context.Errors.Add(new ExecutionError("Invalid broadcast id"));
+                        return default;
+                    }
+
+                    // Get the message argument value
+                    var message = context.GetArgument<string>("message");
+                    
+                    // Add the report to the broadcast
+                    broadcast.Reports.Add(message);
+
+                    // Update the broadcast and return the updated broadcast
+                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                }
+            );
 
             this.FieldAsync<BroadcastType>(
                 "update",

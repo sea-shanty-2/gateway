@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Gateway.Models;
 using Gateway.Repositories;
+using GraphQL.Authorization;
 using GraphQL.Types;
 using Microsoft.Extensions.Configuration;
 
@@ -17,6 +18,7 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Categories);
             Field(x => x.JoinedTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
             Field(x => x.LeftTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
+            Field(x => x.Reports);
             FieldAsync<AccountType>(
                 "broadcaster",
                 "the broadcast owner",

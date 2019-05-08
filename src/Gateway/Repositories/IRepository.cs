@@ -26,9 +26,6 @@ namespace Gateway.Repositories
         /// Finds all the entities that match with the supplied expression.
         /// </summary>
         Task<IEnumerable<T>> FindRangeAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default);
-
-        Task<IQueryable<T>> QueryAsync(CancellationToken cancellationToken = default);
-
         /// <summary>
         /// Updates the first entity that matches with the supplied expression.
         /// </summary>
