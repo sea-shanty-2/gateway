@@ -23,7 +23,10 @@ namespace Gateway.MongoDB.Extensions
         /// <param name="connectionString"></param>
         /// <param name="drop">If true, the existing data (if any) will be dropped.</param>
         /// <returns></returns>
-        public static IServiceCollection AddMongoDBRepositories(this IServiceCollection services, string connectionString, bool drop = false)
+        public static IServiceCollection AddMongoDBRepositories(
+            this IServiceCollection services, 
+            string connectionString, 
+            bool drop = false)
         {
             var dbname = MongoUrl.Create(connectionString).DatabaseName;
             var client = new MongoClient(connectionString);

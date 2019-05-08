@@ -87,7 +87,7 @@ namespace Gateway.GraphQL.Mutations
                         context.Errors.Add(new ExecutionError(response.ReasonPhrase));
                         return default;
                     }
-                    
+
                     SendNewBroadcastNotification(broadcast.Categories);
 
                     return broadcast;
@@ -102,7 +102,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     }),
-                
+
                 resolve: async context =>
                 {
                     // Update the broadcast entity in the database
@@ -112,19 +112,19 @@ namespace Gateway.GraphQL.Mutations
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
                     var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
                     var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
-                    if (joined > left) 
+                    if (joined > left)
                     {
                         context.Errors.Add(new ExecutionError("The account have not left the broadcast and cannot enter."));
                         return default;
                     }
 
-                    broadcast.JoinedTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
-                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+                    broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
+                    broadcast = await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
-            
+
             this.FieldAsync<IdGraphType>(
                 "leave",
                 arguments: new QueryArguments(
@@ -132,7 +132,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         Name = "id"
                     }),
-                
+
                 resolve: async context =>
                 {
                     // Update the broadcast entity in the database
@@ -142,18 +142,55 @@ namespace Gateway.GraphQL.Mutations
                     var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
                     var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
                     var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
-                    if (joined <= left) 
+                    if (joined <= left)
                     {
                         context.Errors.Add(new ExecutionError("The account have not joined the broadcast and can therefore not leave."));
                         return default;
                     }
 
-                    broadcast.LeftTimeStamps.Push(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
-                    await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
+                    broadcast = await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
 
                     return broadcastId;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
+
+            this.FieldAsync<BroadcastType>(
+                "report",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>()
+                    {
+                        Name = "id"
+                    },
+                    new QueryArgument<NonNullGraphType<StringGraphType>>()
+                    {
+                        Name = "message"
+                    }
+                ),
+                resolve: async context =>
+                {
+                    // Get the id argument value
+                    var id = context.GetArgument<string>("id");
+                    
+                    // Validate broadcast id
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    // Inform the user if the id is invalid
+                    if (broadcast == default) {
+                        context.Errors.Add(new ExecutionError("Invalid broadcast id"));
+                        return default;
+                    }
+
+                    // Get the message argument value
+                    var message = context.GetArgument<string>("message");
+                    
+                    // Add the report to the broadcast
+                    broadcast.Reports.Add(message);
+
+                    // Update the broadcast and return the updated broadcast
+                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                }
+            );
 
             this.FieldAsync<BroadcastType>(
                 "update",
@@ -218,7 +255,7 @@ namespace Gateway.GraphQL.Mutations
                 {
                     var id = context.GetArgument<string>("id");
                     var identity = context.UserContext.As<UserContext>().User.Identity;
-                    
+
                     // Get broadcast 
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
 
@@ -227,7 +264,8 @@ namespace Gateway.GraphQL.Mutations
                     broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     // Ensure only broadcaster can stop broadcast
-                    if (broadcast.AccountId != identity.Name) {
+                    if (broadcast.AccountId != identity.Name)
+                    {
                         context.Errors.Add(new ExecutionError("Not authorized to stop broadcast"));
                         return default;
                     }
@@ -276,21 +314,21 @@ namespace Gateway.GraphQL.Mutations
                     return broadcast;
                 }).AuthorizeWith("AuthenticatedPolicy");
         }
-        
+
         private async void SendNewBroadcastNotification(double[] categories)
         {
-            
+
             // Define a condition which will send to devices which are subscribed
             var condition = CreateCondition(categories);
-            
-            
+
+
             var message = new Message()
             {
                 Notification = new Notification()
                 {
                     Title = "New stream",
                     Body = $"A new stream you might be interested in has begun.",
-                           //$"DEBUG: Condition: {condition}, Categories: [{String.Join("", categories)}]",
+                    //$"DEBUG: Condition: {condition}, Categories: [{String.Join("", categories)}]",
                 },
                 Condition = condition,
                 Android = new AndroidConfig()
@@ -304,8 +342,8 @@ namespace Gateway.GraphQL.Mutations
             // specified by the provided condition.
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             // Response is a message ID string.
-            
-            
+
+
             //Console.WriteLine("Successfully sent message: " + response);
 
         }
@@ -319,7 +357,7 @@ namespace Gateway.GraphQL.Mutations
                 {
                     continue;
                 }
-                
+
                 if (!first)
                 {
                     condition += " || ";
@@ -328,10 +366,10 @@ namespace Gateway.GraphQL.Mutations
                 {
                     first = false;
                 }
-                
+
                 condition += $"'Category{i}' in topics";
             }
-            
+
             return condition;
         }
     }
