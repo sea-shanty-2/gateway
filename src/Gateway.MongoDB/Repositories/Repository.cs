@@ -82,10 +82,10 @@ namespace Gateway.MongoDB.Repositories
                     },
                     cancellationToken
                 );
+                entity = await cursor.FirstOrDefaultAsync(cancellationToken);
 
-                if (await cursor.AnyAsync(cancellationToken))
+                if (entity != default)
                 {
-                    entity = await cursor.FirstOrDefaultAsync(cancellationToken);
                     break;
                 }
                 else
