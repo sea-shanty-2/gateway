@@ -11,9 +11,9 @@ namespace Gateway.Models
         {
             Activity = DateTime.UtcNow;
             Token = Guid.NewGuid().ToString("N");
-            
-            JoinedTimeStamps = new ConcurrentStack<ViewerDateTimePair>();
-            LeftTimeStamps = new ConcurrentStack<ViewerDateTimePair>();
+            JoinedTimeStamps = new List<ViewerDateTimePair>();
+            LeftTimeStamps = new List<ViewerDateTimePair>();
+            Reports = new List<string>();
         }
 
         public string Id { get; set; }
@@ -27,8 +27,9 @@ namespace Gateway.Models
         public string Token { get; }
         public int PositiveRatings { get; set; }
         public int NegativeRatings { get; set; }
-        public ConcurrentStack<ViewerDateTimePair> JoinedTimeStamps { get; set; }
-        public ConcurrentStack<ViewerDateTimePair> LeftTimeStamps { get; set; }
+        public ICollection<string> Reports { get; set; }
+        public ICollection<ViewerDateTimePair> JoinedTimeStamps { get; set; }
+        public ICollection<ViewerDateTimePair> LeftTimeStamps { get; set; }
     }
 
     public class ViewerDateTimePair
