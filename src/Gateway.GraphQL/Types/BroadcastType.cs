@@ -4,6 +4,7 @@ using Gateway.Models;
 using Gateway.Repositories;
 using GraphQL.Authorization;
 using GraphQL.Types;
+using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.Configuration;
 
 namespace Gateway.GraphQL.Types
@@ -19,6 +20,13 @@ namespace Gateway.GraphQL.Types
             Field(x => x.JoinedTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
             Field(x => x.LeftTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
             Field(x => x.Reports);
+            Field(x => x.PositiveRatings);
+            Field(x => x.NegativeRatings);
+            Field<IntGraphType>(
+                "viewer_count",
+                "The number of viewers on this broadcast.",
+                resolve: context => context.Source.JoinedTimeStamps.Count - context.Source.LeftTimeStamps.Count);
+            
             FieldAsync<AccountType>(
                 "broadcaster",
                 "the broadcast owner",
