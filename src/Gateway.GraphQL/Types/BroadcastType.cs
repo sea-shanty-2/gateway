@@ -43,7 +43,7 @@ namespace Gateway.GraphQL.Types
                     await repository.FindAsync(x => x.Id == context.Source.AccountId, context.CancellationToken)
             );
 
-            Field<StringGraphType>(
+            Field<NonNullGraphType<StringGraphType>>(
                 "rtmp", 
                 "the broadcast rtmp server", 
                 resolve: context => 

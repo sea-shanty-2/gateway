@@ -60,8 +60,10 @@ namespace Gateway.GraphQL.Types
                 .Bidirectional()
                 .ResolveAsync(async context =>
                 {
-                    var entities = await broadcastRepository
-                        .FindRangeAsync(x => x.AccountId == context.Source.Id, context.CancellationToken);
+                    var entities = (await broadcastRepository
+                        .FindRangeAsync(x => x.AccountId == context.Source.Id, context.CancellationToken))
+                        .OrderByDescending(x => x.Activity);
+
                     return entities.ToConnection(context);
                 });
         }
