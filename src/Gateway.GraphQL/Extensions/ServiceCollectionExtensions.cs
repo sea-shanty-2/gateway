@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Gateway.GraphQL.Requirements;
@@ -8,6 +9,7 @@ using GraphQL.Types.Relay;
 using GraphQL.Validation;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
@@ -31,16 +33,25 @@ namespace Gateway.GraphQL.Extensions
             return services;
         }
 
-        public static IServiceCollection AddGraphQLAuth(this IServiceCollection services)
+        public static IServiceCollection AddGraphQLAuth(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddSingleton<IAuthorizationEvaluator, AuthorizationEvaluator>();
             services.AddTransient<IValidationRule, AuthorizationValidationRule>();
 
-            services.AddSingleton(s =>
+            services.AddSingleton(_ =>
             {
-                var authSettings = new AuthorizationSettings();
-                authSettings.AddPolicy("AuthenticatedPolicy", p => p.AddRequirement(new AuthenticatedUserRequirement()));
-                return authSettings;
+                var s = new AuthorizationSettings();
+                
+                s.AddPolicy("AuthenticatedPolicy", p => p.AddRequirement(new AuthenticatedRequirement()));
+                s.AddPolicy("ValidApiKeyPolicy",
+                    p => p.AddRequirement(
+                        new ValidApiKeyRequirement(
+                            configuration.GetSection("CLIENTS").AsEnumerable()
+                        )
+                    )
+                );
+
+                return s;
             });
 
             return services;

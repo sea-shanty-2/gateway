@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
+using Gateway.Models;
+using Gateway.Repositories;
 using GraphQL.Authorization;
 
 namespace Gateway.GraphQL.Requirements
 {
-    public class AuthenticatedUserRequirement : IAuthorizationRequirement
+    public class AuthenticatedRequirement : IAuthorizationRequirement
     {
         public Task Authorize(AuthorizationContext context)
         {
