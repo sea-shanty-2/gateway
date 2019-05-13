@@ -40,7 +40,7 @@ namespace Gateway.GraphQL
                     }
                     else
                     {
-                        services.GetService<BroadcastService>().Clear().RunSynchronously();
+                        services.GetService<BroadcastService>().Clear().Wait();
                     }
 
                 }
