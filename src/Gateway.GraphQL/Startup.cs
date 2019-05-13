@@ -62,7 +62,7 @@ namespace Gateway.GraphQL
                 .AddSingleton<ISchema, MainSchema>()
                 .AddSingleton<JWTService>()
                 .AddRelayGraphTypes()
-                .AddGraphQLAuth()
+                .AddGraphQLAuth(Configuration)
                 .AddGraphTypes();
 
             if (!Environment.IsProduction())
