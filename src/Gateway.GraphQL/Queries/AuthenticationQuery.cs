@@ -10,6 +10,7 @@ using Gateway.GraphQL.Services;
 using Gateway.Models;
 using Gateway.Repositories;
 using GraphQL;
+using GraphQL.Authorization;
 using GraphQL.Types;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -28,6 +29,14 @@ namespace Gateway.GraphQL.Queries
     {
         public AuthenticationQuery(JWTService jwtservice, IRepository<Account> repository)
         {
+            Field<StringGraphType>(
+                "test",
+                resolve: context =>
+                {
+                    return "valid api key supplied";
+                }
+            ).AuthorizeWith("ValidApiKeyPolicy");
+
             FieldAsync<StringGraphType>(
                 "facebook",
                 arguments: new QueryArguments(

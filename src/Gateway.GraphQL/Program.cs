@@ -23,7 +23,7 @@ namespace Gateway.GraphQL
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Hour)
                 .WriteTo.Console()
                 .CreateLogger();
-            
+
             try
             {
                 Log.Information("Starting web host");
@@ -32,11 +32,15 @@ namespace Gateway.GraphQL
                 using (var scope = host.Services.CreateScope())
                 {
                     var services = scope.ServiceProvider;
-
-                    if (!services.GetService<IHostingEnvironment>().IsProduction())
+                    var environment = services.GetService<IHostingEnvironment>();
+                    if (!environment.IsProduction())
                     {
                         var context = services.GetRequiredService<SeedService>();
                         context.Seed();
+                    }
+                    else
+                    {
+                        services.GetService<BroadcastService>().Clear().RunSynchronously();
                     }
 
                 }
