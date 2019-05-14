@@ -35,8 +35,8 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     // Retrieve the broadcast entity from the argument dictionary
-                    var broadcast = context.GetArgument<Broadcast>("broadcast"); 
-                    
+                    var broadcast = context.GetArgument<Broadcast>("broadcast");
+
                     // Add the broadcast entity to the database
                     broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
                     broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
@@ -96,7 +96,8 @@ namespace Gateway.GraphQL.Mutations
 
                     return broadcast;
 
-                }).AuthorizeWith("AuthenticatedPolicy");
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
 
 
             this.FieldAsync<IdGraphType>(
@@ -125,6 +126,80 @@ namespace Gateway.GraphQL.Mutations
                     return broadcastId;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
+
+            this.FieldAsync<BroadcastType>(
+                "addViewers",
+                "(DEBUG) Add viewers to the specified broadcast",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>
+                    {
+                        Name = "id"
+                    },
+                    new QueryArgument<NonNullGraphType<IntGraphType>>
+                    {
+                        Name = "quantity"
+                    }
+                ),
+                resolve: async context =>
+                {
+                    var id = context.GetArgument<string>("id");
+                    var quantity = context.GetArgument<int>("quantity");
+
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    for (int i = 0; i < quantity; i++)
+                    {
+                        var entry = new ViewerDateTimePair(
+                            Guid.NewGuid().ToString("N"),
+                            DateTimeOffset.Now.ToUnixTimeSeconds()
+                        );
+
+                        broadcast.JoinedTimeStamps.Add(entry);
+                    }
+
+                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                }
+            );
+
+            this.FieldAsync<BroadcastType>(
+                "removeViewers",
+                "(DEBUG) Remove viewers from the specified broadcast",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>>
+                    {
+                        Name = "id"
+                    },
+                    new QueryArgument<NonNullGraphType<IntGraphType>>
+                    {
+                        Name = "quantity"
+                    }
+                ),
+                resolve: async context =>
+                {
+                    var id = context.GetArgument<string>("id");
+                    var quantity = context.GetArgument<int>("quantity");
+
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    var joinedViewerIds = broadcast.JoinedTimeStamps.Select(x => x.Id);
+                    var leftViewerIds = broadcast.LeftTimeStamps.Select(x => x.Id);
+
+                    var viewers = joinedViewerIds.Except(leftViewerIds);
+                    var i = 0;
+
+                    foreach (var viewer in viewers)
+                    {
+                        var entry = new ViewerDateTimePair(
+                            viewer,
+                            DateTimeOffset.Now.ToUnixTimeSeconds()
+                        );
+                        broadcast.LeftTimeStamps.Add(entry);
+                        if (++i == quantity) break;
+                    }
+
+                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                }
+            );
 
             this.FieldAsync<IdGraphType>(
                 "leave",
@@ -172,19 +247,20 @@ namespace Gateway.GraphQL.Mutations
                 {
                     // Get the id argument value
                     var id = context.GetArgument<string>("id");
-                    
+
                     // Validate broadcast id
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
 
                     // Inform the user if the id is invalid
-                    if (broadcast == default) {
+                    if (broadcast == default)
+                    {
                         context.Errors.Add(new ExecutionError("Invalid broadcast id"));
                         return default;
                     }
 
                     // Get the message argument value
                     var message = context.GetArgument<string>("message");
-                    
+
                     // Add the report to the broadcast
                     broadcast.Reports.Add(message);
 
@@ -243,7 +319,8 @@ namespace Gateway.GraphQL.Mutations
                     }
 
                     return broadcast;
-                });
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
 
             this.FieldAsync<BroadcastStopType>(
                 "stop",
@@ -259,7 +336,7 @@ namespace Gateway.GraphQL.Mutations
 
                     // Get broadcast 
                     var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
-                    
+
                     // Set expired to true
                     broadcast.Expired = true;
                     broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
@@ -311,7 +388,8 @@ namespace Gateway.GraphQL.Mutations
                     }
 
                     return broadcast;
-                }).AuthorizeWith("AuthenticatedPolicy");
+                }
+            ).AuthorizeWith("AuthenticatedPolicy");
         }
 
         private async void SendNewBroadcastNotification(double[] categories)
@@ -323,8 +401,8 @@ namespace Gateway.GraphQL.Mutations
             {
                 Log.Error("Invalid condition. Condition cannot be empty.");
             }
-            
-            
+
+
             var message = new Message()
             {
                 Notification = new Notification()
@@ -372,7 +450,7 @@ namespace Gateway.GraphQL.Mutations
                             condition += " || ";
                         else
                             first = false;
-                        
+
                         condition += $"'Category{i}' in topics";
                         break;
                     default:
