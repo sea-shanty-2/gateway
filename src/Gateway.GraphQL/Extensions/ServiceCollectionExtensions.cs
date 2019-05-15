@@ -38,18 +38,15 @@ namespace Gateway.GraphQL.Extensions
             services.AddSingleton<IAuthorizationEvaluator, AuthorizationEvaluator>();
             services.AddTransient<IValidationRule, AuthorizationValidationRule>();
 
+            // Build a service provider
+            var sp = services.BuildServiceProvider();
+
             services.AddSingleton(_ =>
             {
                 var s = new AuthorizationSettings();
                 
-                s.AddPolicy("AuthenticatedPolicy", p => p.AddRequirement(new AuthenticatedRequirement()));
-                s.AddPolicy("ValidApiKeyPolicy",
-                    p => p.AddRequirement(
-                        new ValidApiKeyRequirement(
-                            configuration.GetSection("CLIENTS").AsEnumerable()
-                        )
-                    )
-                );
+                s.AddPolicy("AuthenticatedPolicy", p => 
+                    p.AddRequirement(new AuthenticatedRequirement()));
 
                 return s;
             });

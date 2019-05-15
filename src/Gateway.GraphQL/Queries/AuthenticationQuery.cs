@@ -29,14 +29,6 @@ namespace Gateway.GraphQL.Queries
     {
         public AuthenticationQuery(JWTService jwtservice, IRepository<Account> repository)
         {
-            Field<StringGraphType>(
-                "test",
-                resolve: context =>
-                {
-                    return "valid api key supplied";
-                }
-            ).AuthorizeWith("ValidApiKeyPolicy");
-
             FieldAsync<StringGraphType>(
                 "facebook",
                 arguments: new QueryArguments(
