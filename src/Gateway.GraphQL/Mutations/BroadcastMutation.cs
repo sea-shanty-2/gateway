@@ -21,7 +21,11 @@ namespace Gateway.GraphQL.Mutations
 {
     public class BroadcastMutation : ObjectGraphType<object>
     {
-        public BroadcastMutation(IRepository<Broadcast> repository, IConfiguration configuration)
+        public BroadcastMutation(
+            IRepository<Broadcast> broadcasts,
+            IRepository<Viewer> viewers,
+            IRepository<Account> accounts,
+            IConfiguration configuration)
         {
 
             this.FieldAsync<BroadcastCreateType>(
@@ -39,7 +43,7 @@ namespace Gateway.GraphQL.Mutations
 
                     // Add the broadcast entity to the database
                     broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
-                    broadcast = await repository.AddAsync(broadcast, context.CancellationToken);
+                    broadcast = await broadcasts.AddAsync(broadcast, context.CancellationToken);
 
 
                     // Construct a data transfer object for the clustering service
@@ -112,16 +116,32 @@ namespace Gateway.GraphQL.Mutations
                 {
                     // Update the broadcast entity in the database
                     var broadcastId = context.GetArgument<string>("id");
-                    var viewerId = context.UserContext.As<UserContext>().User.Identity;
+                    var accountId = context.UserContext.As<UserContext>().User.Identity.Name;
 
-                    var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
-                    var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
-                    var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
-                    if (joined <= left)
+                    // Validate the account and broadcast
+                    var broadcast = await broadcasts.FindAsync(x => x.Id == broadcastId, context.CancellationToken);
+
+                    if (broadcast == null)
                     {
-                        broadcast.JoinedTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
-                        broadcast = await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+                        context.Errors.Add(new ExecutionError("Broadcast not found"));
                     }
+
+                    var account = await accounts.FindAsync(x => x.Id == accountId, context.CancellationToken);
+
+                    if (account == null)
+                    {
+                        context.Errors.Add(new ExecutionError("Account not found"));
+                    }
+
+                    // Construct a viewer entity and add it to the repository
+                    var viewer = new Viewer
+                    {
+                        AccountId = accountId,
+                        BroadcastId = broadcastId,
+                        Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+                    };
+
+                    await viewers.AddAsync(viewer, context.CancellationToken);
 
                     return broadcastId;
                 }
@@ -142,62 +162,29 @@ namespace Gateway.GraphQL.Mutations
                 ),
                 resolve: async context =>
                 {
-                    var id = context.GetArgument<string>("id");
+                    var broadcastId = context.GetArgument<string>("id");
                     var quantity = context.GetArgument<int>("quantity");
 
-                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                    var broadcast = await broadcasts.FindAsync(x => x.Id == broadcastId, context.CancellationToken);
+
+                    if (broadcast == null)
+                    {
+                        context.Errors.Add(new ExecutionError("Broadcast not found"));
+                    }
 
                     for (int i = 0; i < quantity; i++)
                     {
-                        var entry = new ViewerDateTimePair(
-                            Guid.NewGuid().ToString("N"),
-                            DateTimeOffset.Now.ToUnixTimeSeconds()
-                        );
+                        var viewer = new Viewer
+                        {
+                            AccountId = Guid.NewGuid().ToString("N"),
+                            BroadcastId = broadcastId,
+                            Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+                        };
 
-                        broadcast.JoinedTimeStamps.Add(entry);
+                        await viewers.AddAsync(viewer, context.CancellationToken);
                     }
 
-                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
-                }
-            );
-
-            this.FieldAsync<BroadcastType>(
-                "removeViewers",
-                "(DEBUG) Remove viewers from the specified broadcast",
-                arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<IdGraphType>>
-                    {
-                        Name = "id"
-                    },
-                    new QueryArgument<NonNullGraphType<IntGraphType>>
-                    {
-                        Name = "quantity"
-                    }
-                ),
-                resolve: async context =>
-                {
-                    var id = context.GetArgument<string>("id");
-                    var quantity = context.GetArgument<int>("quantity");
-
-                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
-
-                    var joinedViewerIds = broadcast.JoinedTimeStamps.Select(x => x.Id);
-                    var leftViewerIds = broadcast.LeftTimeStamps.Select(x => x.Id);
-
-                    var viewers = joinedViewerIds.Except(leftViewerIds);
-                    var i = 0;
-
-                    foreach (var viewer in viewers)
-                    {
-                        var entry = new ViewerDateTimePair(
-                            viewer,
-                            DateTimeOffset.Now.ToUnixTimeSeconds()
-                        );
-                        broadcast.LeftTimeStamps.Add(entry);
-                        if (++i == quantity) break;
-                    }
-
-                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    return broadcast;
                 }
             );
 
@@ -213,19 +200,32 @@ namespace Gateway.GraphQL.Mutations
                 {
                     // Update the broadcast entity in the database
                     var broadcastId = context.GetArgument<string>("id");
-                    var viewerId = context.UserContext.As<UserContext>().User.Identity;
+                    var accountId = context.UserContext.As<UserContext>().User.Identity.Name;
 
-                    var broadcast = await repository.FindAsync(x => x.Id == broadcastId);
-                    var joined = broadcast.JoinedTimeStamps.Count(x => x.Id == viewerId.Name);
-                    var left = broadcast.LeftTimeStamps.Count(x => x.Id == viewerId.Name);
-                    if (joined <= left)
+                    // Validate the account and broadcast
+                    var broadcast = await broadcasts.FindAsync(x => x.Id == broadcastId, context.CancellationToken);
+
+                    if (broadcast == null)
                     {
-                        context.Errors.Add(new ExecutionError("The account have not joined the broadcast and can therefore not leave."));
-                        return default;
+                        context.Errors.Add(new ExecutionError("Broadcast not found"));
                     }
 
-                    broadcast.LeftTimeStamps.Add(new ViewerDateTimePair(viewerId.Name, DateTimeOffset.Now.ToUnixTimeSeconds()));
-                    broadcast = await repository.UpdateAsync(x => x.Id == broadcastId, broadcast);
+                    var account = await accounts.FindAsync(x => x.Id == accountId, context.CancellationToken);
+
+                    if (account == null)
+                    {
+                        context.Errors.Add(new ExecutionError("Account not found"));
+                    }
+
+                    // Construct a viewer entity and add it to the repository
+                    var viewer = new Viewer
+                    {
+                        AccountId = accountId,
+                        BroadcastId = broadcastId,
+                        Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+                    };
+
+                    await viewers.AddAsync(viewer, context.CancellationToken);
 
                     return broadcastId;
                 }
@@ -249,7 +249,7 @@ namespace Gateway.GraphQL.Mutations
                     var id = context.GetArgument<string>("id");
 
                     // Validate broadcast id
-                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                    var broadcast = await broadcasts.FindAsync(x => x.Id == id, context.CancellationToken);
 
                     // Inform the user if the id is invalid
                     if (broadcast == default)
@@ -265,7 +265,7 @@ namespace Gateway.GraphQL.Mutations
                     broadcast.Reports.Add(message);
 
                     // Update the broadcast and return the updated broadcast
-                    return await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    return await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
                 }
             );
 
@@ -289,7 +289,7 @@ namespace Gateway.GraphQL.Mutations
                     // Check if the location was changed
                     var locationUpdated = broadcast.Location != null;
                     broadcast.Activity = DateTime.UtcNow;
-                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     if (locationUpdated)
                     {
@@ -320,7 +320,7 @@ namespace Gateway.GraphQL.Mutations
 
                     return broadcast;
                 }
-            ).AuthorizeWith("AuthenticatedPolicy");
+            );
 
             this.FieldAsync<BroadcastStopType>(
                 "stop",
@@ -335,11 +335,11 @@ namespace Gateway.GraphQL.Mutations
                     var identity = context.UserContext.As<UserContext>().User.Identity;
 
                     // Get broadcast 
-                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                    var broadcast = await broadcasts.FindAsync(x => x.Id == id, context.CancellationToken);
 
                     // Set expired to true
                     broadcast.Expired = true;
-                    broadcast = await repository.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     // Ensure only broadcaster can stop broadcast
                     if (broadcast.AccountId != identity.Name)
