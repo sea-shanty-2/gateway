@@ -142,11 +142,11 @@ namespace Gateway.GraphQL.Queries
                     var selectionBroadcasts = queriedEvent.Broadcasts.Select(
                         x => new SelectionBroadcast.Broadcast(){
                             Stability = (float) x.Stability,
-                            Bitrate = x.Bitrate,
+                            Bitrate = x.Bitrate.GetValueOrDefault(),
                             Identifier = x.Id,
                             Ratings = new List<IBroadcastRating>() {
-                                new BroadcastRating(RatingPolarity.Positive, x.PositiveRatings),
-                                new BroadcastRating(RatingPolarity.Negative, x.NegativeRatings)
+                                new BroadcastRating(RatingPolarity.Positive, x.PositiveRatings.GetValueOrDefault()),
+                                new BroadcastRating(RatingPolarity.Negative, x.NegativeRatings.GetValueOrDefault())
                             }
                         } as SelectionBroadcast.IBroadcast
                     ).ToList();

@@ -18,15 +18,15 @@ namespace Gateway.Models
 
         public string Id { get; set; }
         public double[] Categories { get; set; }
-        public int Bitrate { get; set; }
-        public double Stability { get; set; }
+        public int? Bitrate { get; set; }
+        public double? Stability { get; set; }
         public Location Location { get; set; }
         public DateTime Activity { get; set; }
-        public Boolean Expired { get; set; }
+        public Boolean? Expired { get; set; }
         public string AccountId { get; set; }
         public string Token { get; }
-        public int PositiveRatings { get; set; }
-        public int NegativeRatings { get; set; }
+        public int? PositiveRatings { get; set; }
+        public int? NegativeRatings { get; set; }
         public ICollection<string> Reports { get; set; }
         public ICollection<ViewerDateTimePair> JoinedTimeStamps { get; set; }
         public ICollection<ViewerDateTimePair> LeftTimeStamps { get; set; }
