@@ -7,17 +7,28 @@ namespace Gateway.GraphQL.Types
     public class LocationType : ObjectGraphType<Location>
     {
         public LocationType() {
-            Field(x => x.Longitude);
-            Field(x => x.Latitude);
+            Field<FloatGraphType>(
+                "longitude",
+                resolve: context => context.Source.Longitude.GetValueOrDefault()
+            );
+            Field<FloatGraphType>(
+                "latitude",
+                resolve: context => context.Source.Latitude.GetValueOrDefault()
+            );
         }
     }
 
     public class LocationInputType : InputObjectGraphType<Location>
     {
         public LocationInputType() {
-            
-            Field(x => x.Longitude);
-            Field(x => x.Latitude);
+            Field<FloatGraphType>(
+                "longitude",
+                resolve: context => context.Source.Longitude.GetValueOrDefault()
+            );
+            Field<FloatGraphType>(
+                "latitude",
+                resolve: context => context.Source.Latitude.GetValueOrDefault()
+            );
         }
     }
 }

@@ -22,8 +22,10 @@ namespace Gateway.MongoDB.Repositories
         {
             /// Ignore default values
             /// http://mongodb.github.io/mongo-csharp-driver/2.4/reference/bson/mapping/conventions/
-            ConventionRegistry.Register("IgnoreIfDefault",
-                            new ConventionPack { new IgnoreIfDefaultConvention(true) },
+            ConventionRegistry.Register("IgnoreIfNull",
+                            new ConventionPack { 
+                                new IgnoreIfNullConvention(true) 
+                            },
                             t => true);
 
             /// Map string id to objectid (required for unique indexing in mongodb).
