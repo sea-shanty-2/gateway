@@ -62,7 +62,7 @@ namespace Gateway.GraphQL.Queries
                 .Description("Gets pages of active broadcasts.")
                 .Bidirectional()
                 .ResolveAsync(async context => {
-                    var expiration = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1));
+                    var expiration = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(2));
                     var entities = await repository.FindRangeAsync(x => x.Activity.CompareTo(expiration) > 0 && !x.Expired);
                     return entities.ToConnection(context);
                 });
