@@ -7,6 +7,7 @@ namespace Gateway.GraphQL.Types
     {
         public EventType() {
             Field(x => x.Broadcasts, type: typeof(ListGraphType<BroadcastType>));
+            Field(x => x.Recommended, type: typeof(BroadcastType));
         }
     }
 }

@@ -11,6 +11,11 @@ using GraphQL.Types;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
+using SelectionBroadcast = EnvueStreamSelection.Broadcast;
+using EnvueStreamSelection.Broadcast.Rating;
+using EnvueStreamSelection;
+using EnvueStreamSelection.Selector.EpsilonGreedy;
+using EnvueStreamSelection.Selector.Autonomous;
 
 namespace Gateway.GraphQL.Queries
 {
@@ -133,6 +138,30 @@ namespace Gateway.GraphQL.Queries
                         context.Errors.Add(new ExecutionError(e.Message));
                         return default;
                     }
+
+                    var selectionBroadcasts = queriedEvent.Broadcasts.Select(
+                        x => new SelectionBroadcast.Broadcast(){
+                            Stability = (float) x.Stability,
+                            Bitrate = x.Bitrate,
+                            Identifier = x.Id,
+                            Ratings = new List<IBroadcastRating>() {
+                                new BroadcastRating(RatingPolarity.Positive, x.PositiveRatings),
+                                new BroadcastRating(RatingPolarity.Negative, x.NegativeRatings)
+                            }
+                        } as SelectionBroadcast.IBroadcast
+                    ).ToList();
+
+                    var epsilon = new EpsilonGreedySelector(
+                        new ExponentialEpsilonComputer(), 
+                        new BestBroadcastSelector(),
+                        new AutonomousBroadcastSelector()
+                    );
+
+                    var recommended = epsilon.SelectFrom(selectionBroadcasts);
+                    
+                    queriedEvent.Recommended = queriedEvent.Broadcasts.SingleOrDefault(
+                        x => x.Id == recommended.Identifier
+                    );
 
                     return queriedEvent;
                 });
