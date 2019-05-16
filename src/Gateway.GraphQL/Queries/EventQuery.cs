@@ -138,30 +138,31 @@ namespace Gateway.GraphQL.Queries
                         context.Errors.Add(new ExecutionError(e.Message));
                         return default;
                     }
+                    if (queriedEvent.Broadcasts != null) {
+                        var selectionBroadcasts = queriedEvent.Broadcasts.Select(
+                            x => new SelectionBroadcast.Broadcast(){
+                                Stability = (float) x.Stability.GetValueOrDefault(),
+                                Bitrate = x.Bitrate.GetValueOrDefault(),
+                                Identifier = x.Id,
+                                Ratings = new List<IBroadcastRating>() {
+                                    new BroadcastRating(RatingPolarity.Positive, x.PositiveRatings.GetValueOrDefault()),
+                                    new BroadcastRating(RatingPolarity.Negative, x.NegativeRatings.GetValueOrDefault())
+                                }
+                            } as SelectionBroadcast.IBroadcast
+                        ).ToList();
 
-                    var selectionBroadcasts = queriedEvent.Broadcasts.Select(
-                        x => new SelectionBroadcast.Broadcast(){
-                            Stability = (float) x.Stability.GetValueOrDefault(),
-                            Bitrate = x.Bitrate.GetValueOrDefault(),
-                            Identifier = x.Id,
-                            Ratings = new List<IBroadcastRating>() {
-                                new BroadcastRating(RatingPolarity.Positive, x.PositiveRatings.GetValueOrDefault()),
-                                new BroadcastRating(RatingPolarity.Negative, x.NegativeRatings.GetValueOrDefault())
-                            }
-                        } as SelectionBroadcast.IBroadcast
-                    ).ToList();
+                        var epsilon = new EpsilonGreedySelector(
+                            new ExponentialEpsilonComputer(), 
+                            new BestBroadcastSelector(),
+                            new AutonomousBroadcastSelector()
+                        );
 
-                    var epsilon = new EpsilonGreedySelector(
-                        new ExponentialEpsilonComputer(), 
-                        new BestBroadcastSelector(),
-                        new AutonomousBroadcastSelector()
-                    );
-
-                    var recommended = epsilon.SelectFrom(selectionBroadcasts);
-                    
-                    queriedEvent.Recommended = queriedEvent.Broadcasts.SingleOrDefault(
-                        x => x.Id == recommended.Identifier
-                    );
+                        var recommended = epsilon.SelectFrom(selectionBroadcasts);
+                        
+                        queriedEvent.Recommended = queriedEvent.Broadcasts.SingleOrDefault(
+                            x => x.Id == recommended.Identifier
+                        );
+                    }
 
                     return queriedEvent;
                 });
