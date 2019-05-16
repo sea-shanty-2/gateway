@@ -30,7 +30,7 @@ namespace Gateway.GraphQL.Queries
                     return await repository.FindAsync(x => x.Id == id, context.CancellationToken);
                 });
 
-            FieldAsync<IntGraphType>(
+            Field<IntGraphType>(
                 "viewer_count",
                 "Get the number of viewers on a specific broadcast",
                 arguments: new QueryArguments(
@@ -39,13 +39,11 @@ namespace Gateway.GraphQL.Queries
                         Name = "id",
                         Description = "Unique identifier of the broadcast."
                     }), 
-                resolve: async context =>
+                resolve: context =>
                 {
-                    var id = context.GetArgument<string>("id");
-                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
-
-                    return broadcast.JoinedTimeStamps.Count - broadcast.LeftTimeStamps.Count;
-                });
+                    return 0;
+                },
+                "View count is present on the broadcast return type");
 
             Connection<BroadcastType>()
                 .Name("page")
