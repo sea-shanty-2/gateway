@@ -53,12 +53,12 @@ namespace Gateway.GraphQL.Types
 
             Field(x => x.Reports);
 
-            Field<IntGraphType>(
+            Field<NonNullGraphType<IntGraphType>>(
                 "positiveRatings",
                 resolve: context => context.Source.PositiveRatings.GetValueOrDefault()
             );
 
-            Field<IntGraphType>(
+            Field<NonNullGraphType<IntGraphType>>(
                 "negativeRatings",
                 resolve: context => context.Source.NegativeRatings.GetValueOrDefault()
             );

@@ -15,7 +15,7 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Id);
             Field(x => x.DisplayName);
             Field(x => x.Categories, nullable: true);
-            Field<IntGraphType>(
+            Field<NonNullGraphType<IntGraphType>>(
                 "score",
                 resolve: context => context.Source.Score.GetValueOrDefault()
             );
