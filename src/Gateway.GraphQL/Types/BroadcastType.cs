@@ -26,8 +26,16 @@ namespace Gateway.GraphQL.Types
                 .DeprecationReason("start using 'viewers' instead, this is removed in the coming update");
 
             Field(x => x.Reports);
-            Field(x => x.PositiveRatings);
-            Field(x => x.NegativeRatings);
+
+            Field<IntGraphType>(
+                "positiveRatings",
+                resolve: context => context.Source.PositiveRatings.GetValueOrDefault()
+            );
+
+            Field<IntGraphType>(
+                "negativeRatings",
+                resolve: context => context.Source.NegativeRatings.GetValueOrDefault()
+            );
 
             FieldAsync<ListGraphType<ViewerType>>(
                 "viewers",

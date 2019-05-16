@@ -4,8 +4,8 @@ namespace Gateway.Models
 {
     public class Location
     {
-        private double longitude;
-        public double Longitude
+        private double? longitude;
+        public double? Longitude
         {
             get { return longitude; }
             set
@@ -26,8 +26,8 @@ namespace Gateway.Models
             }
         }
 
-        private double latitude;
-        public double Latitude
+        private double? latitude;
+        public double? Latitude
         {
             get { return latitude; }
             set
