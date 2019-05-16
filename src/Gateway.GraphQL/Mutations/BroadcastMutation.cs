@@ -322,7 +322,7 @@ namespace Gateway.GraphQL.Mutations
                 }
             );
 
-            this.FieldAsync<BroadcastStopType>(
+            this.FieldAsync<BroadcastType>(
                 "stop",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>()

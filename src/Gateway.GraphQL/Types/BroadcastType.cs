@@ -134,13 +134,4 @@ namespace Gateway.GraphQL.Types
             );
         }
     }
-
-    public class BroadcastStopType : ObjectGraphType<Broadcast>
-    {
-        public BroadcastStopType()
-        {
-            Field(x => x.JoinedTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
-            Field(x => x.LeftTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
-        }
-    }
 }
