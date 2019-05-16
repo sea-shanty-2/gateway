@@ -37,7 +37,7 @@ namespace Gateway.GraphQL
                 {
                     var services = scope.ServiceProvider;
                     var environment = services.GetService<IHostingEnvironment>();
-                    if (environment.IsProduction())
+                    if (!environment.IsProduction())
                     {
                         var context = services.GetRequiredService<SeedService>();
                         context.Seed();
