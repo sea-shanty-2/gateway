@@ -19,20 +19,46 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Activity, type: typeof(DateTimeGraphType));
             Field(x => x.Categories);
 
-            Field(x => x.JoinedTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>))
-                .DeprecationReason("start using 'viewers' instead, this is removed in the coming update");
-            
-            Field(x => x.LeftTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>))
-                .DeprecationReason("start using 'viewers' instead, this is removed in the coming update");
+            FieldAsync<ListGraphType<ViewerDateTimePairType>>(
+                "joinedTimeStamps",
+                resolve: async context => {
+                    var response = (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken))
+                        .GroupBy(x => x.AccountId)
+                        .SelectMany(g => g.Select((x, i) => new {
+                            Index = i,
+                            Viewer = x
+                        }))
+                        .Where(x => x.Index % 2 == 0)
+                        .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
+
+                    return response;
+                }
+            );
+
+            FieldAsync<ListGraphType<ViewerDateTimePairType>>(
+                "leftTimeStamps",
+                resolve: async context => {
+                    var response = (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken))
+                        .GroupBy(x => x.AccountId)
+                        .SelectMany(g => g.Select((x, i) => new {
+                            Index = i,
+                            Viewer = x
+                        }))
+                        .Where(x => x.Index % 2 == 1)
+                        .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
+
+                    return response;
+                }
+            );
 
             Field(x => x.Reports);
 
-            Field<IntGraphType>(
+            Field<NonNullGraphType<IntGraphType>>(
                 "positiveRatings",
                 resolve: context => context.Source.PositiveRatings.GetValueOrDefault()
             );
 
-            Field<IntGraphType>(
+            Field<NonNullGraphType<IntGraphType>>(
                 "negativeRatings",
                 resolve: context => context.Source.NegativeRatings.GetValueOrDefault()
             );
@@ -106,15 +132,6 @@ namespace Gateway.GraphQL.Types
                 resolve: context =>
                     $"{configuration.GetValue<string>("RTMP_SERVER")}/{context.Source.Token}"
             );
-        }
-    }
-
-    public class BroadcastStopType : ObjectGraphType<Broadcast>
-    {
-        public BroadcastStopType()
-        {
-            Field(x => x.JoinedTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
-            Field(x => x.LeftTimeStamps, type: typeof(ListGraphType<ViewerDateTimePairType>));
         }
     }
 }

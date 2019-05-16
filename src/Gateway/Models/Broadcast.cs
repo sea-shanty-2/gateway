@@ -11,8 +11,6 @@ namespace Gateway.Models
         {
             Activity = DateTime.UtcNow;
             Token = Guid.NewGuid().ToString("N");
-            JoinedTimeStamps = new List<ViewerDateTimePair>();
-            LeftTimeStamps = new List<ViewerDateTimePair>();
             Reports = new List<string>();
         }
 
@@ -28,8 +26,6 @@ namespace Gateway.Models
         public int? PositiveRatings { get; set; }
         public int? NegativeRatings { get; set; }
         public ICollection<string> Reports { get; set; }
-        public ICollection<ViewerDateTimePair> JoinedTimeStamps { get; set; }
-        public ICollection<ViewerDateTimePair> LeftTimeStamps { get; set; }
     }
 
     public class ViewerDateTimePair

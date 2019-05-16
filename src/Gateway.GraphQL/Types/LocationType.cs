@@ -7,11 +7,11 @@ namespace Gateway.GraphQL.Types
     public class LocationType : ObjectGraphType<Location>
     {
         public LocationType() {
-            Field<FloatGraphType>(
+            Field<NonNullGraphType<FloatGraphType>>(
                 "longitude",
                 resolve: context => context.Source.Longitude.GetValueOrDefault()
             );
-            Field<FloatGraphType>(
+            Field<NonNullGraphType<FloatGraphType>>(
                 "latitude",
                 resolve: context => context.Source.Latitude.GetValueOrDefault()
             );
@@ -21,11 +21,11 @@ namespace Gateway.GraphQL.Types
     public class LocationInputType : InputObjectGraphType<Location>
     {
         public LocationInputType() {
-            Field<FloatGraphType>(
+            Field<NonNullGraphType<FloatGraphType>>(
                 "longitude",
                 resolve: context => context.Source.Longitude.GetValueOrDefault()
             );
-            Field<FloatGraphType>(
+            Field<NonNullGraphType<FloatGraphType>>(
                 "latitude",
                 resolve: context => context.Source.Latitude.GetValueOrDefault()
             );
