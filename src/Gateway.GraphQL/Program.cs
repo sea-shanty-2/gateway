@@ -1,9 +1,13 @@
 using System;
+using System.Net.Http;
 using FirebaseAdmin;
 using Gateway.GraphQL.Services;
+using Gateway.Models;
+using Gateway.Repositories;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
@@ -33,14 +37,31 @@ namespace Gateway.GraphQL
                 {
                     var services = scope.ServiceProvider;
                     var environment = services.GetService<IHostingEnvironment>();
-                    if (!environment.IsProduction())
+                    if (environment.IsProduction())
                     {
                         var context = services.GetRequiredService<SeedService>();
                         context.Seed();
                     }
                     else
                     {
-                        services.GetService<BroadcastService>().Clear().Wait();
+                        var repository = services.GetRequiredService<IRepository<Broadcast>>();
+                        var configuration = services.GetRequiredService<IConfiguration>();
+                        
+                        repository.UpdateRangeAsync(
+                            x => x.Expired == false,
+                            new Broadcast
+                            {
+                                Expired = true,
+                                Activity = DateTime.UtcNow
+                            }
+                        ).Wait();
+
+                        var client = new HttpClient
+                        {
+                            BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                        };
+
+                        client.GetAsync("/data/clear").Wait();
                     }
 
                 }
