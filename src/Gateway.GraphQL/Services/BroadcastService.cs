@@ -47,45 +47,39 @@ namespace Gateway.GraphQL.Services
             var inactiveLimit = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(1));
             Expression<Func<Broadcast, bool>> filter = x => x.Expired == false && x.Activity.CompareTo(inactiveLimit) <= 0;
 
-            var broadcasts = (await repository.FindRangeAsync(filter)).ToList();
+            var ids = (await repository.FindRangeAsync(filter)).Select(x => x.Id);
 
             var client = new HttpClient
             {
                 BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
             };
 
-            var response = await client.PostAsJsonAsync("/data/remove-range", broadcasts.Select(x => x.Id));
+            var response = await client.PostAsJsonAsync("/data/remove-range", ids);
 
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                await repository.UpdateRangeAsync(filter, new Broadcast { Expired = true, Activity = DateTime.UtcNow });
+                return;
             }
-        }
 
-        /// <summary>
-        /// Expires all broadcasts and sends a request to the clustering API to clear data
-        /// </summary>
-        public async Task Clear()
-        {
-            await repository.UpdateRangeAsync(
-                x => x.Expired == false,
-                new Broadcast
-                {
-                    Expired = true,
-                    Activity = DateTime.UtcNow
-                }
-            );
-
-            var client = new HttpClient
+            client = new HttpClient
             {
-                BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
+                BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
             };
 
-            await client.GetAsync("/data/clear");
+            foreach (var id in ids)
+            {
+                response = await client.DeleteAsync(id);
+                if (response.IsSuccessStatusCode)
+                {
+                    await repository.UpdateAsync(
+                        x => x.Id == id, 
+                        new Broadcast { Expired = true, Activity = DateTime.UtcNow });
+                }
+            }
+
+
+
+
         }
-
-
-
-
     }
 }
