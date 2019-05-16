@@ -37,7 +37,8 @@ namespace Gateway.GraphQL.Services
           {
             return new Broadcast
             {
-              Activity = f.Date.Soon(),
+              Activity = f.Date.Recent(),
+              Expired = false,
               Bitrate = f.Random.Int(0, 160),
               Location = new Location
               {

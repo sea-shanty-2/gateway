@@ -61,7 +61,7 @@ namespace Gateway.GraphQL
                 .AddSingleton<IDocumentWriter, DocumentWriter>()
                 .AddSingleton<ISchema, MainSchema>()
                 .AddSingleton<JWTService>()
-                .AddSingleton<BroadcastService>()
+                .AddHostedService<BroadcastService>()
                 .AddRelayGraphTypes()
                 .AddGraphQLAuth(Configuration)
                 .AddGraphTypes();
