@@ -12,6 +12,7 @@ namespace Gateway.Models
             Activity = DateTime.UtcNow;
             Token = Guid.NewGuid().ToString("N");
             Reports = new List<string>();
+            Expired = false;
         }
 
         public string Id { get; set; }
