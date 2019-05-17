@@ -53,7 +53,7 @@ namespace Gateway.GraphQL.Services
             logger.LogInformation("Starting broadcast cleaning task");
 
             var inactiveLimit = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(1));
-            Expression<Func<Broadcast, bool>> filter = x => x.Expired != true && x.Activity.CompareTo(inactiveLimit) <= 0;
+            Expression<Func<Broadcast, bool>> filter = x => x.Expired != true && x.Activity.Value.CompareTo(inactiveLimit) <= 0;
 
             var broadcasts = await repository.FindRangeAsync(filter);
             var first = broadcasts.FirstOrDefault();
@@ -63,14 +63,25 @@ namespace Gateway.GraphQL.Services
                 return;
             }
 
-            logger.LogDebug("Inactive broadcast: {object}", new { id = first.Id, timestamp = first.Activity.Ticks });
+            logger.LogDebug("Inactive broadcast: {object}", new { id = first.Id, timestamp = first.Activity.Value.Ticks });
 
             var client = new HttpClient
             {
                 BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
             };
 
-            var response = await client.PostAsJsonAsync("/data/remove-range", broadcasts.Select(x => x.Id));
+            HttpResponseMessage response = default;
+
+            try
+            {
+                response = await client.PostAsJsonAsync("/data/remove-range", broadcasts.Select(x => x.Id));
+            }
+            catch (OperationCanceledException ex)
+            {
+                logger.LogError(ex, "{uri}", client.BaseAddress);
+                return;
+            }
+
 
             if (!response.IsSuccessStatusCode)
             {
@@ -91,7 +102,16 @@ namespace Gateway.GraphQL.Services
 
             foreach (var id in broadcasts.Select(x => x.Id))
             {
-                response = await client.DeleteAsync(id);
+                try
+                {
+                    response = await client.DeleteAsync(id);
+                }
+                catch (OperationCanceledException ex)
+                {
+                    logger.LogError(ex, "{uri}", client.BaseAddress);
+                    return;
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     await repository.UpdateAsync(
@@ -102,7 +122,7 @@ namespace Gateway.GraphQL.Services
                 {
                     if (statusCode == response.StatusCode)
                         continue;
-                    
+
                     logger.LogError(
                             "{uri} ({status}): delete {id}",
                             client.BaseAddress.ToString(),

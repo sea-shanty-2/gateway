@@ -9,10 +9,7 @@ namespace Gateway.Models
     {
         public Broadcast()
         {
-            Activity = DateTime.UtcNow;
-            Token = Guid.NewGuid().ToString("N");
             Reports = new List<string>();
-            Expired = false;
         }
 
         public string Id { get; set; }
@@ -20,10 +17,10 @@ namespace Gateway.Models
         public int? Bitrate { get; set; }
         public double? Stability { get; set; }
         public Location Location { get; set; }
-        public DateTime Activity { get; set; }
+        public DateTime? Activity { get; set; }
         public Boolean? Expired { get; set; }
         public string AccountId { get; set; }
-        public string Token { get; }
+        public string Token { get; set; }
         public int? PositiveRatings { get; set; }
         public int? NegativeRatings { get; set; }
         public ICollection<string> Reports { get; set; }

@@ -25,7 +25,8 @@ namespace Gateway.GraphQL.Mutations
             IRepository<Broadcast> broadcasts,
             IRepository<Viewer> viewers,
             IRepository<Account> accounts,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ILogger<BroadcastMutation> logger)
         {
 
             this.FieldAsync<BroadcastCreateType>(
@@ -41,10 +42,13 @@ namespace Gateway.GraphQL.Mutations
                     // Retrieve the broadcast entity from the argument dictionary
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
 
+                    // Init the token and activity
+                    broadcast.Token = Guid.NewGuid().ToString("N");
+                    broadcast.Activity = DateTime.UtcNow;
+
                     // Add the broadcast entity to the database
                     broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
                     broadcast = await broadcasts.AddAsync(broadcast, context.CancellationToken);
-
 
                     // Construct a data transfer object for the clustering service
                     var dto = new
@@ -272,28 +276,40 @@ namespace Gateway.GraphQL.Mutations
             this.FieldAsync<BroadcastType>(
                 "update",
                 arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<IdGraphType>>()
+                    new QueryArgument<NonNullGraphType<IdGraphType>>
                     {
                         Name = "id"
                     },
-                    new QueryArgument<NonNullGraphType<BroadcastUpdateInputType>>()
+                    new QueryArgument<BooleanGraphType>
+                    {
+                        Name = "activity",
+                        DefaultValue = true
+                    },
+                    new QueryArgument<NonNullGraphType<BroadcastUpdateInputType>>
                     {
                         Name = "broadcast"
                     }),
                 resolve: async context =>
                 {
-                    // Update the broadcast entity in the database
                     var id = context.GetArgument<string>("id");
+
+                    // Validate the broadcast
+                    if (await broadcasts.FindAsync(x => x.Id == id) == null)
+                    {
+                        context.Errors.Add(new ExecutionError("Broadcast not found."));
+                        return default;
+                    }
+
                     var broadcast = context.GetArgument<Broadcast>("broadcast");
 
                     // Check if the location was changed
                     var locationUpdated = broadcast.Location != null;
-                    var ratingUpdated = broadcast.PositiveRatings != null;
 
-                    if (!ratingUpdated) {
+                    if (context.GetArgument<bool>("activity"))
+                    {
                         broadcast.Activity = DateTime.UtcNow;
                     }
-                    
+
                     broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     if (locationUpdated)
