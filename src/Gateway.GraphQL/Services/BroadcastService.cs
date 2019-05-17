@@ -50,8 +50,10 @@ namespace Gateway.GraphQL.Services
 
         private async void TimedCleanAsync(object state)
         {
+            logger.LogInformation("Starting broadcast cleaning task");
+
             var inactiveLimit = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(1));
-            Expression<Func<Broadcast, bool>> filter = x => x.Expired == false && x.Activity.CompareTo(inactiveLimit) <= 0;
+            Expression<Func<Broadcast, bool>> filter = x => x.Expired != true && x.Activity.CompareTo(inactiveLimit) <= 0;
 
             var broadcasts = await repository.FindRangeAsync(filter);
             var first = broadcasts.FirstOrDefault();
