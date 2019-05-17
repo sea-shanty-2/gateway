@@ -290,7 +290,7 @@ namespace Gateway.GraphQL.Mutations
                     var locationUpdated = broadcast.Location != null;
                     var ratingUpdated = broadcast.PositiveRatings != null;
 
-                    if (ratingUpdated) {
+                    if (!ratingUpdated) {
                         broadcast.Activity = DateTime.UtcNow;
                     }
                     
