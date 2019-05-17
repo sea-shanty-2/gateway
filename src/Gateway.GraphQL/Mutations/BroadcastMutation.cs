@@ -288,7 +288,12 @@ namespace Gateway.GraphQL.Mutations
 
                     // Check if the location was changed
                     var locationUpdated = broadcast.Location != null;
-                    broadcast.Activity = DateTime.UtcNow;
+                    var ratingUpdated = broadcast.PositiveRatings != null;
+
+                    if (ratingUpdated) {
+                        broadcast.Activity = DateTime.UtcNow;
+                    }
+                    
                     broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
                     if (locationUpdated)
