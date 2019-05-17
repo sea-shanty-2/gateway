@@ -33,7 +33,7 @@ namespace Gateway.GraphQL.Types
                         .OrderByDescending(x => x.Score)
                         .GroupBy(x => x.Score)
                         .Select((group, i) => new {
-                            Rank = i,
+                            Rank = i + 1,
                             Groups = group
                         })
                         .FirstOrDefault(group => group.Groups.FirstOrDefault(x => x.Id == id) != default)
