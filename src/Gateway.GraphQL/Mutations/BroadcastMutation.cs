@@ -142,7 +142,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         AccountId = accountId,
                         BroadcastId = broadcastId,
-                        Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     };
 
                     await viewers.AddAsync(viewer, context.CancellationToken);
@@ -182,7 +182,7 @@ namespace Gateway.GraphQL.Mutations
                         {
                             AccountId = Guid.NewGuid().ToString("N"),
                             BroadcastId = broadcastId,
-                            Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+                            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                         };
 
                         await viewers.AddAsync(viewer, context.CancellationToken);
@@ -226,7 +226,7 @@ namespace Gateway.GraphQL.Mutations
                     {
                         AccountId = accountId,
                         BroadcastId = broadcastId,
-                        Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     };
 
                     await viewers.AddAsync(viewer, context.CancellationToken);
