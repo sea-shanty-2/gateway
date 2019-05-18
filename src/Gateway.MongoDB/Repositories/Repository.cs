@@ -71,12 +71,11 @@ namespace Gateway.MongoDB.Repositories
 
         public async Task<T> FindAsync(Expression<Func<T, bool>> expression, CancellationToken cancellationToken = default)
         {
-            IAsyncCursor<T> cursor = default;
             T entity = default;
 
-            for (int attempt = 0; attempt < 3; attempt++)
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                cursor = await _collection.FindAsync(
+                var cursor = await _collection.FindAsync(
                     expression,
                     new FindOptions<T, T>
                     {
@@ -86,7 +85,7 @@ namespace Gateway.MongoDB.Repositories
                 );
                 entity = await cursor.FirstOrDefaultAsync(cancellationToken);
 
-                if (entity != default)
+                if (entity != null)
                 {
                     break;
                 }
@@ -103,9 +102,9 @@ namespace Gateway.MongoDB.Repositories
         {
             IEnumerable<T> entities = default;
 
-            for (int attempt = 0; attempt < 3; attempt++)
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                entities = await Task.Run(() => _collection.AsQueryable().Where(expression).AsEnumerable());
+                entities = await Task.Run(() => _collection.AsQueryable().Where(expression).AsEnumerable(), cancellationToken);
 
                 if (entities.Any())
                 {
