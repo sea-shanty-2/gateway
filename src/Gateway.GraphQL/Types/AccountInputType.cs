@@ -18,7 +18,7 @@ namespace Gateway.GraphQL.Types
         {
             Field(x => x.DisplayName, nullable: true);
             Field(x => x.Categories, nullable: true);
-            Field(x => x.Score, nullable: true);
+            Field(x => x.Score, nullable: true).DeprecationReason("Score updates will be moved to server.");
         }
 
     }
