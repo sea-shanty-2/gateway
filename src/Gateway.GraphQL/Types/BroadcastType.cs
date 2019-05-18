@@ -76,8 +76,7 @@ namespace Gateway.GraphQL.Types
                 resolve: async context =>
                     (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken))
                         .GroupBy(x => x.AccountId)
-                        .Where(x => x.Count() % 2 != 0)
-                        .Count(),
+                        .Count(x => x.Count() % 2 != 0),
                 deprecationReason: "'viewer_count' is changed to 'current_viewer_count' in the coming update"
             );
 
@@ -87,8 +86,7 @@ namespace Gateway.GraphQL.Types
                 resolve: async context =>
                     (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken))
                         .GroupBy(x => x.AccountId)
-                        .Where(x => x.Count() % 2 != 0)
-                        .Count()
+                        .Count(x => x.Count() % 2 != 0)
             );
 
             FieldAsync<IntGraphType>(
@@ -106,8 +104,6 @@ namespace Gateway.GraphQL.Types
                 resolve: async context =>
                     await accounts.FindAsync(x => x.Id == context.Source.AccountId, context.CancellationToken)
             );
-
-
         }
     }
 
