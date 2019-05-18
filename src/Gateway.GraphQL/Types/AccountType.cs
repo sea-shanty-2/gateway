@@ -30,10 +30,11 @@ namespace Gateway.GraphQL.Types
                     var query = await accountRepository.FindRangeAsync(x => true, context.CancellationToken);
                     
                     return query
-                        .OrderByDescending(x => x.Score)
                         .GroupBy(x => x.Score)
+                        .OrderByDescending(g => g.First().Score)
                         .Select((group, i) => new {
                             Rank = i + 1,
+                            Score = group.FirstOrDefault().Score,
                             Groups = group
                         })
                         .FirstOrDefault(group => group.Groups.FirstOrDefault(x => x.Id == id) != default)
