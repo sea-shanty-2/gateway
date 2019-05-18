@@ -372,13 +372,17 @@ namespace Gateway.GraphQL.Mutations
                     // Update score
                     var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
                     var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
-                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
-
-                    if (account.Score == null) account.Score = 0;
-
-                    account.Score += score;
                     
-                    await accounts.UpdateAsync(x => x.Id == identity.Name, account, context.CancellationToken);
+                    if (account != null) 
+                    {
+                        var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+
+                        if (account.Score == null) account.Score = 0;
+
+                        account.Score += score;
+                        
+                        await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
+                    }
 
                     var dto = new
                     {

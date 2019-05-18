@@ -26,6 +26,7 @@ namespace Gateway.GraphQL.Services
         {
             this.repository = repository;
             this.viewers = viewers;
+            this.accounts = accounts;
             this.configuration = configuration;
             this.logger = logger;
         }
@@ -105,14 +106,17 @@ namespace Gateway.GraphQL.Services
                     // Update score
                     var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id);
                     var account = await accounts.FindAsync(x => x.Id == broadcast.AccountId);
-                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
 
-                    if (account.Score == null) account.Score = 0;
+                    if (account != null) 
+                    {
+                        var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
 
-                    account.Score += score;
-                    
-                    await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
-                    
+                        if (account.Score == null) account.Score = 0;
+
+                        account.Score += score;
+                        
+                        await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
+                    }
                     
                     logger.LogDebug(
                         "Broadcast {id} stopped due to inactivity",

@@ -19,6 +19,14 @@ namespace Gateway.GraphQL.Types
             Field(x => x.Activity, type: typeof(DateTimeGraphType));
             Field(x => x.Categories);
 
+            FieldAsync<IntGraphType>(
+                "score",
+                resolve: async context => {
+                    var response = await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken);
+                    return BroadcastUtility.CalculateScore(response, context.Source);
+                }
+            );
+
             FieldAsync<ListGraphType<ViewerDateTimePairType>>(
                 "joinedTimeStamps",
                 resolve: async context => {
