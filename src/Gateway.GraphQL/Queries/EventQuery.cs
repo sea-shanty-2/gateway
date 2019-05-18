@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Types;
 using Gateway.Models;
@@ -21,7 +22,10 @@ namespace Gateway.GraphQL.Queries
 {
     public class EventQuery : ObjectGraphType<object>
     {
-        public EventQuery(IRepository<Broadcast> repository, IConfiguration configuration)
+        private const int ExplicitRatingWeight = 5;
+        private const int ImplicitRatingWeight = 1;
+        
+        public EventQuery(IRepository<Broadcast> broadcastRepository, IRepository<Viewer> viewerRepository, IConfiguration configuration)
         {
             FieldAsync<ListGraphType<EventType>>("all", resolve: async context =>
             {
@@ -42,21 +46,21 @@ namespace Gateway.GraphQL.Queries
 
                 // Parse the response data
                 var data = await response.Content.ReadAsStringAsync();
-                var jarray = JArray.Parse(data);
+                var jArray = JArray.Parse(data);
 
                 // Construct the event entities
                 var events = new List<Event>();
 
                 try
                 {
-                    foreach (var e in jarray.Children())
+                    foreach (var e in jArray.Children())
                     {
                         var broadcasts = new List<Broadcast>();
 
-                        foreach (JObject b in e.Children())
+                        foreach (JObject obj in e.Children())
                         {
                             // Lookup each broadcast entity in the database and add to the list of broadcasts for the event
-                            var broadcast = await repository.FindAsync(x => x.Id == b.GetValue("id").ToObject<string>());
+                            var broadcast = await broadcastRepository.FindAsync(x => x.Id == obj.GetValue("id").ToObject<string>());
 
                             if (broadcast != null)
                             {
@@ -113,7 +117,7 @@ namespace Gateway.GraphQL.Queries
     
                     // Parse the response data
                     var data = await response.Content.ReadAsStringAsync();
-                    var jarray = JArray.Parse(data);
+                    var jArray = JArray.Parse(data);
                     
                     // Prepare return event
                     var queriedEvent = new Event();
@@ -121,14 +125,14 @@ namespace Gateway.GraphQL.Queries
                     try
                     {
                         // Go through all event clusters
-                        foreach (var e in jarray.Children())
+                        foreach (var e in jArray.Children())
                         {
                             var broadcastIds = e.Children<JObject>().Select(b => b.GetValue("id").ToObject<string>()).ToArray();
                             // If an event contains our broadcaster, return that event
                             if (broadcastIds.Any(id => id == queriedId))
                             {
                                 queriedEvent.Broadcasts = broadcastIds.Select(id =>
-                                    repository.FindAsync(b => b.Id == id).GetAwaiter().GetResult());
+                                    broadcastRepository.FindAsync(b => b.Id == id).GetAwaiter().GetResult());
                             }
                         }
                     }
@@ -138,31 +142,38 @@ namespace Gateway.GraphQL.Queries
                         context.Errors.Add(new ExecutionError(e.Message));
                         return default;
                     }
-                    if (queriedEvent.Broadcasts != null) {
-                        var selectionBroadcasts = queriedEvent.Broadcasts.Select(
-                            x => new SelectionBroadcast.Broadcast(){
-                                Stability = (float) x.Stability.GetValueOrDefault(),
-                                Bitrate = x.Bitrate.GetValueOrDefault(),
-                                Identifier = x.Id,
-                                Ratings = new List<IBroadcastRating>() {
-                                    new BroadcastRating(RatingPolarity.Positive, x.PositiveRatings.GetValueOrDefault()),
-                                    new BroadcastRating(RatingPolarity.Negative, x.NegativeRatings.GetValueOrDefault())
-                                }
-                            } as SelectionBroadcast.IBroadcast
-                        ).ToList();
 
-                        var epsilon = new EpsilonGreedySelector(
-                            new ExponentialEpsilonComputer(), 
-                            new BestBroadcastSelector(),
-                            new AutonomousBroadcastSelector()
-                        );
+                    if (queriedEvent.Broadcasts == null) return queriedEvent;
+                    
+                    var selectionBroadcasts = queriedEvent.Broadcasts.Select(
+                        async x => new SelectionBroadcast.Broadcast(){
+                            Stability = (float) x.Stability.GetValueOrDefault(),
+                            Bitrate = x.Bitrate.GetValueOrDefault(),
+                            Identifier = x.Id,
+                            Ratings = new List<IBroadcastRating>
+                            {
+                                new BroadcastRating(RatingPolarity.Positive, ImplicitRatingWeight * (await viewerRepository.FindRangeAsync(v => v.BroadcastId == x.Id))
+                                                                                                                                   .GroupBy(v => v.AccountId)
+                                                                                                                                   .Count(v => v.Count() % 2 != 0)),
+                                new BroadcastRating(RatingPolarity.Positive, ExplicitRatingWeight * x.PositiveRatings.GetValueOrDefault()),
+                                new BroadcastRating(RatingPolarity.Negative, ExplicitRatingWeight * x.NegativeRatings.GetValueOrDefault())
+                            }
+                        } as SelectionBroadcast.IBroadcast
+                    );
 
-                        var recommended = epsilon.SelectFrom(selectionBroadcasts);
+                    var epsilon = new EpsilonGreedySelector(
+                        new ExponentialEpsilonComputer(0.15, 0.05), 
+                        new BestBroadcastSelector(),
+                        new AutonomousBroadcastSelector()
+                    );
+
+                    await Task.WhenAll(selectionBroadcasts);
+                    
+                    var recommended = epsilon.SelectFrom(selectionBroadcasts.Select(t => t.Result).ToList());
                         
-                        queriedEvent.Recommended = queriedEvent.Broadcasts.SingleOrDefault(
-                            x => x.Id == recommended.Identifier
-                        );
-                    }
+                    queriedEvent.Recommended = queriedEvent.Broadcasts.SingleOrDefault(
+                        x => x.Id == recommended.Identifier
+                    );
 
                     return queriedEvent;
                 });
