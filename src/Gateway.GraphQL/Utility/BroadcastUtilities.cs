@@ -34,14 +34,14 @@ public static class BroadcastUtility{
                 .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
     }
 
-        public static IEnumerable<ViewerDateTimePair> GetLeftTimeStamps(IEnumerable<Viewer> viewers){
-        return viewers
-                .GroupBy(x => x.AccountId)
-                .SelectMany(g => g.Select((x, i) => new {
-                    Index = i,
-                    Viewer = x
-                }))
-                .Where(x => x.Index % 2 == 1)
-                .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
+    public static IEnumerable<ViewerDateTimePair> GetLeftTimeStamps(IEnumerable<Viewer> viewers){
+    return viewers
+            .GroupBy(x => x.AccountId)
+            .SelectMany(g => g.Select((x, i) => new {
+                Index = i,
+                Viewer = x
+            }))
+            .Where(x => x.Index % 2 == 1)
+            .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
     }
 }

@@ -358,16 +358,27 @@ namespace Gateway.GraphQL.Mutations
                     // Get broadcast 
                     var broadcast = await broadcasts.FindAsync(x => x.Id == id, context.CancellationToken);
 
-                    // Set expired to true
-                    broadcast.Expired = true;
-                    broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
-
                     // Ensure only broadcaster can stop broadcast
                     if (broadcast.AccountId != identity.Name)
                     {
                         context.Errors.Add(new ExecutionError("Not authorized to stop broadcast"));
                         return default;
                     }
+
+                    // Set expired to true
+                    broadcast.Expired = true;
+                    broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+
+                    // Update score
+                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
+                    var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+
+                    if (account.Score == null) account.Score = 0;
+
+                    account.Score += score;
+                    
+                    await accounts.UpdateAsync(x => x.Id == identity.Name, account, context.CancellationToken);
 
                     var dto = new
                     {

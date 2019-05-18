@@ -30,7 +30,7 @@ namespace Gateway.GraphQL.Types
             FieldAsync<ListGraphType<ViewerDateTimePairType>>(
                 "leftTimeStamps",
                 resolve: async context => {
-                    var response = (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken));
+                    var response = await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken);
 
                     return BroadcastUtility.GetLeftTimeStamps(response);
                 }

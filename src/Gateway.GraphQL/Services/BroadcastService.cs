@@ -18,11 +18,14 @@ namespace Gateway.GraphQL.Services
     {
         private Timer timer;
         private readonly IRepository<Broadcast> repository;
+        private readonly IRepository<Viewer> viewers;
+        private readonly IRepository<Account> accounts;
         private readonly IConfiguration configuration;
         private readonly ILogger logger;
-        public BroadcastService(IRepository<Broadcast> repository, IConfiguration configuration, ILogger<BroadcastService> logger)
+        public BroadcastService(IRepository<Broadcast> repository, IRepository<Viewer> viewers, IRepository<Account> accounts, IConfiguration configuration, ILogger<BroadcastService> logger)
         {
             this.repository = repository;
+            this.viewers = viewers;
             this.configuration = configuration;
             this.logger = logger;
         }
@@ -95,9 +98,21 @@ namespace Gateway.GraphQL.Services
                 
                 if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    await repository.UpdateAsync(
+                    var broadcast = await repository.UpdateAsync(
                         x => x.Id == id,
                         new Broadcast { Expired = true, Activity = DateTime.UtcNow });
+
+                    // Update score
+                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id);
+                    var account = await accounts.FindAsync(x => x.Id == broadcast.AccountId);
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+
+                    if (account.Score == null) account.Score = 0;
+
+                    account.Score += score;
+                    
+                    await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
+                    
                     
                     logger.LogDebug(
                         "Broadcast {id} stopped due to inactivity",
