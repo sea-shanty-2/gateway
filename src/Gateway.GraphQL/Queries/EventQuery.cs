@@ -162,7 +162,7 @@ namespace Gateway.GraphQL.Queries
                     );
 
                     var epsilon = new EpsilonGreedySelector(
-                        new ExponentialEpsilonComputer(), 
+                        new ExponentialEpsilonComputer(0.15, 0.05), 
                         new BestBroadcastSelector(),
                         new AutonomousBroadcastSelector()
                     );
