@@ -143,6 +143,17 @@ namespace Gateway.GraphQL.Queries
                         return default;
                     }
 
+                    var broadcast = await broadcastRepository.FindAsync(x => x.Id == queriedId, context.CancellationToken);
+
+                    if (broadcast != null && broadcast.Expired == true)
+                    {
+                        response = new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
+                        var error = new ExecutionError(System.Net.HttpStatusCode.NotFound.ToString());
+                        error.Code = "404";
+                        context.Errors.Add(error);
+                        return default;
+                    }
+
                     if (queriedEvent.Broadcasts == null) return queriedEvent;
                     
                     var selectionBroadcasts = queriedEvent.Broadcasts.Select(
