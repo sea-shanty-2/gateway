@@ -22,32 +22,17 @@ namespace Gateway.GraphQL.Types
             FieldAsync<ListGraphType<ViewerDateTimePairType>>(
                 "joinedTimeStamps",
                 resolve: async context => {
-                    var response = (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken))
-                        .GroupBy(x => x.AccountId)
-                        .SelectMany(g => g.Select((x, i) => new {
-                            Index = i,
-                            Viewer = x
-                        }))
-                        .Where(x => x.Index % 2 == 0)
-                        .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
-
-                    return response;
+                    var response = await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken);
+                    return BroadcastUtility.GetJoinedTimeStamps(response);
                 }
             );
 
             FieldAsync<ListGraphType<ViewerDateTimePairType>>(
                 "leftTimeStamps",
                 resolve: async context => {
-                    var response = (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken))
-                        .GroupBy(x => x.AccountId)
-                        .SelectMany(g => g.Select((x, i) => new {
-                            Index = i,
-                            Viewer = x
-                        }))
-                        .Where(x => x.Index % 2 == 1)
-                        .Select(x => new ViewerDateTimePair(x.Viewer.AccountId, x.Viewer.Timestamp));
+                    var response = (await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken));
 
-                    return response;
+                    return BroadcastUtility.GetLeftTimeStamps(response);
                 }
             );
 
