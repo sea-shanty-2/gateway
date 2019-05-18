@@ -65,35 +65,16 @@ namespace Gateway.GraphQL.Services
 
             logger.LogDebug("Inactive broadcast: {object}", new { id = first.Id, timestamp = first.Activity.Value.Ticks });
 
-            var client = new HttpClient
+            
+
+            HttpResponseMessage response = default;
+
+            var clusteringClient = new HttpClient
             {
                 BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
             };
 
-            HttpResponseMessage response = default;
-
-            try
-            {
-                response = await client.PostAsJsonAsync("/data/remove-range", broadcasts.Select(x => x.Id));
-            }
-            catch (OperationCanceledException ex)
-            {
-                logger.LogError(ex, "{uri}", client.BaseAddress);
-                return;
-            }
-
-
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogError(
-                    "{uri} ({status}): delete {id}",
-                    client.BaseAddress.ToString(),
-                    response.StatusCode.ToString(),
-                    first.Id);
-                return;
-            }
-
-            client = new HttpClient
+            var relayClient = new HttpClient
             {
                 BaseAddress = new Uri($"{configuration.GetValue<string>("RELAY_URL")}")
             };
@@ -104,12 +85,12 @@ namespace Gateway.GraphQL.Services
             {
                 try
                 {
-                    response = await client.DeleteAsync(id);
+                    await relayClient.DeleteAsync(id);
+                    response = await clusteringClient.PostAsJsonAsync("/data/remove", new { id = id });
                 }
-                catch (OperationCanceledException ex)
+                catch (OperationCanceledException)
                 {
-                    logger.LogError(ex, "{uri}", client.BaseAddress);
-                    return;
+                    continue;
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -117,6 +98,11 @@ namespace Gateway.GraphQL.Services
                     await repository.UpdateAsync(
                         x => x.Id == id,
                         new Broadcast { Expired = true, Activity = DateTime.UtcNow });
+                    
+                    logger.LogDebug(
+                        "Broadcast {id} stopped due to inactivity",
+                        response.StatusCode.ToString(),
+                        await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -124,10 +110,10 @@ namespace Gateway.GraphQL.Services
                         continue;
 
                     logger.LogError(
-                            "{uri} ({status}): delete {id}",
-                            client.BaseAddress.ToString(),
-                            response.StatusCode.ToString(),
-                            id);
+                        "{status}: {message}",
+                        response.StatusCode.ToString(),
+                        await response.Content.ReadAsStringAsync());
+
                     statusCode = response.StatusCode;
                 }
             }
