@@ -92,8 +92,8 @@ namespace Gateway.GraphQL.Services
                 {
                     continue;
                 }
-
-                if (response.IsSuccessStatusCode)
+                
+                if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound)
                 {
                     await repository.UpdateAsync(
                         x => x.Id == id,
@@ -101,8 +101,7 @@ namespace Gateway.GraphQL.Services
                     
                     logger.LogDebug(
                         "Broadcast {id} stopped due to inactivity",
-                        response.StatusCode.ToString(),
-                        await response.Content.ReadAsStringAsync());
+                        id);
                 }
                 else
                 {
