@@ -3,6 +3,7 @@ using Gateway.GraphQL.Extensions;
 using Gateway.GraphQL.Types;
 using Gateway.Models;
 using Gateway.Repositories;
+using GraphQL;
 using GraphQL.Types;
 using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Http.Internal;
@@ -27,10 +28,15 @@ namespace Gateway.GraphQL.Queries
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    return await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                    var broadcast = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    if (broadcast == null)
+                        context.Errors.Add(new ExecutionError($"Broadcast {id} not found"));
+
+                    return broadcast;
                 });
 
-            Field<IntGraphType>(
+/*             Field<IntGraphType>(
                 "viewer_count",
                 "Get the number of viewers on a specific broadcast",
                 arguments: new QueryArguments(
@@ -43,7 +49,7 @@ namespace Gateway.GraphQL.Queries
                 {
                     return 0;
                 },
-                "View count is present on the broadcast return type");
+                "View count is present on the broadcast return type"); */
 
             Connection<BroadcastType>()
                 .Name("page")
@@ -61,9 +67,9 @@ namespace Gateway.GraphQL.Queries
                 .Bidirectional()
                 .ResolveAsync(async context => {
                     var expiration = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(2));
-                    var entities = await repository.FindRangeAsync(x => x.Activity.Value.CompareTo(expiration) > 0 && x.Expired != true);
-                    var a = entities.ToConnection(context);
-                    return a;
+                    var entities = await repository.FindRangeAsync(
+                        x => x.Activity.Value.CompareTo(expiration) > 0 && x.Expired != true);
+                    return entities.ToConnection(context);
                 });
         }
     }
