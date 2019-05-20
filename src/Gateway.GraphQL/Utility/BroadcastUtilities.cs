@@ -4,11 +4,11 @@ using System.Linq;
 using Gateway.Models;
 
 public static class BroadcastUtility{
-    public static int CalculateScore(IEnumerable<Viewer> viewers, Broadcast broadcast){
+    public static int CalculateScore(IEnumerable<Viewer> viewers, DateTime? date){
         var joined = GetJoinedTimeStamps(viewers);
         var left = GetLeftTimeStamps(viewers);
         var score = 0;
-        var lastActivity = (new DateTimeOffset(broadcast.Activity.GetValueOrDefault())).ToUnixTimeSeconds();
+        var lastActivity = (new DateTimeOffset(date.GetValueOrDefault())).ToUnixTimeSeconds();
         var a = joined.GroupBy(x => x.Id);
 
         foreach(ViewerDateTimePair joinPair in joined)
