@@ -161,18 +161,13 @@ namespace Gateway.GraphQL.Queries
                     }
 
                     var selectionBroadcasts = broadcasts.Select(
-                        async x => new SelectionBroadcast.Broadcast()
+                        x => new SelectionBroadcast.Broadcast()
                         {
                             Stability = (float)x.Stability.GetValueOrDefault(),
                             Bitrate = x.Bitrate.GetValueOrDefault(),
                             Identifier = x.Id,
                             Ratings = new List<IBroadcastRating>
                             {
-                                new BroadcastRating(
-                                    RatingPolarity.Positive, 
-                                    ImplicitRatingWeight * (await viewerRepository.FindRangeAsync(v => v.BroadcastId == x.Id))
-                                        .GroupBy(v => v.AccountId)
-                                        .Count(v => v.Count() % 2 != 0)),
                                 new BroadcastRating(RatingPolarity.Positive, ExplicitRatingWeight * x.PositiveRatings.GetValueOrDefault()),
                                 new BroadcastRating(RatingPolarity.Negative, ExplicitRatingWeight * x.NegativeRatings.GetValueOrDefault())
                             }
@@ -185,9 +180,8 @@ namespace Gateway.GraphQL.Queries
                         new AutonomousBroadcastSelector()
                     );
 
-                    await Task.WhenAll(selectionBroadcasts);
 
-                    var recommended = epsilon.SelectFrom(selectionBroadcasts.Select(t => t.Result).ToList());
+                    var recommended = epsilon.SelectFrom(selectionBroadcasts.ToList());
 
                     return new Event {
                         Broadcasts = broadcasts,
