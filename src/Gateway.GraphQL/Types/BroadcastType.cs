@@ -22,8 +22,15 @@ namespace Gateway.GraphQL.Types
             FieldAsync<NonNullGraphType<IntGraphType>>(
                 "score",
                 resolve: async context => {
-                    var response = await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken);
-                    return BroadcastUtility.CalculateScore(response, context.Source);
+                    if(context.Source.Score == null){
+                        var response = await viewers.FindRangeAsync(x => x.BroadcastId == context.Source.Id, context.CancellationToken);
+                        var score = BroadcastUtility.CalculateScore(response, context.Source.Activity);
+                        // TODO: Update broadcast to contain score?
+                        return score;
+                    }
+                    else{
+                        return context.Source.Score;
+                    }
                 }
             );
 

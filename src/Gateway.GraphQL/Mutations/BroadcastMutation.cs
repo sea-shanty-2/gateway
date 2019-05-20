@@ -365,21 +365,25 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
+                    // Get viewers to calculate score
+                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast.Activity);
+                    broadcast.Score = score;
+
                     // Set expired to true
                     broadcast.Expired = true;
                     broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
-                    // Update score
-                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
-                    var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
+                    // Update account
+                    var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);                  
                     
                     if (account != null) 
                     {
-                        var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+                        var accountScore = account.Score;
 
-                        if (account.Score == null) account.Score = 0;
+                        if (accountScore == null) accountScore = 0;
 
-                        account.Score += score;
+                        account.Score = score + accountScore;
                         
                         await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
                     }

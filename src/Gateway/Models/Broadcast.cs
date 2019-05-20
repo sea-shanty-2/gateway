@@ -21,6 +21,7 @@ namespace Gateway.Models
         public Boolean? Expired { get; set; }
         public string AccountId { get; set; }
         public string Token { get; set; }
+        public int? Score { get; set; }
         public int? PositiveRatings { get; set; }
         public int? NegativeRatings { get; set; }
         public ICollection<string> Reports { get; set; }
