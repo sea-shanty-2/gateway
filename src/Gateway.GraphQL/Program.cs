@@ -22,7 +22,7 @@ namespace Gateway.GraphQL
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
                 .Enrich.FromLogContext()
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Hour)
                 .WriteTo.Console()
