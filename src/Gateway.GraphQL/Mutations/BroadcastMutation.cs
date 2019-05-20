@@ -359,7 +359,7 @@ namespace Gateway.GraphQL.Mutations
                     // Update score
                     var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
                     
-                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast.Activity);
 
                     account.Score = (account.Score ?? 0) + score;
 
