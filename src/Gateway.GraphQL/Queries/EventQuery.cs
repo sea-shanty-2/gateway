@@ -17,6 +17,7 @@ using EnvueStreamSelection.Broadcast.Rating;
 using EnvueStreamSelection;
 using EnvueStreamSelection.Selector.EpsilonGreedy;
 using EnvueStreamSelection.Selector.Autonomous;
+using System.Net;
 
 namespace Gateway.GraphQL.Queries
 {
@@ -24,7 +25,7 @@ namespace Gateway.GraphQL.Queries
     {
         private const int ExplicitRatingWeight = 5;
         private const int ImplicitRatingWeight = 1;
-        
+
         public EventQuery(IRepository<Broadcast> broadcastRepository, IRepository<Viewer> viewerRepository, IConfiguration configuration)
         {
             FieldAsync<ListGraphType<EventType>>("all", resolve: async context =>
@@ -35,7 +36,7 @@ namespace Gateway.GraphQL.Queries
                     BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
                 };
 
-                var response = await client.GetAsync("clustering/events");
+                var response = await client.GetAsync("clustering/events", context.CancellationToken);
 
                 // Throw error if request was unsuccessful
                 if (!response.IsSuccessStatusCode)
@@ -86,86 +87,88 @@ namespace Gateway.GraphQL.Queries
 
                 return events;
             });
-            
+
             FieldAsync<EventType>(
-                "containing", 
+                "containing",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>>
                     {
                         Name = "id",
                         Description = "Unique identifier of the broadcast whose event is to be found.",
                     }),
-                
+
                 resolve: async context =>
                 {
-                    var queriedId = context.GetArgument<string>("id");
-                    
-                    // Get events from the clustering service
+                    var id = context.GetArgument<string>("id");
+
+                    var broadcast = await broadcastRepository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    if (broadcast == null)
+                    {
+                        context.Errors.Add(new ExecutionError($"Broadcast {id} not found"));
+                        return default;
+                    }
+
                     var client = new HttpClient
                     {
                         BaseAddress = new Uri(configuration.GetValue<string>("CLUSTERING_URL"))
                     };
-    
-                    var response = await client.GetAsync("clustering/events");
-    
+
+                    if (broadcast.Expired == true)
+                    {
+                        await client.PostAsJsonAsync("/data/remove", new { id = id });
+                        context.Errors.Add(new ExecutionError($"Broadcast {id} marked as expired"));
+                        return default;
+                    }
+
+                    var response = await client.GetAsync("clustering/events", context.CancellationToken);
+
                     // Throw error if request was unsuccessful
                     if (!response.IsSuccessStatusCode)
                     {
                         context.Errors.Add(new ExecutionError(response.ReasonPhrase));
                         return default;
                     }
-    
+
                     // Parse the response data
                     var data = await response.Content.ReadAsStringAsync();
                     var jArray = JArray.Parse(data);
-                    
-                    // Prepare return event
-                    var queriedEvent = new Event();
-    
+
+                    IEnumerable<Broadcast> broadcasts = default;
+
                     try
                     {
-                        // Go through all event clusters
                         foreach (var e in jArray.Children())
                         {
-                            var broadcastIds = e.Children<JObject>().Select(b => b.GetValue("id").ToObject<string>()).ToArray();
-                            // If an event contains our broadcaster, return that event
-                            if (broadcastIds.Any(id => id == queriedId))
+                            var ids = e.Children<JObject>().Select(b => b.Value<string>("id"));
+
+                            if (ids.Contains(id))
                             {
-                                queriedEvent.Broadcasts = broadcastIds.Select(id =>
-                                    broadcastRepository.FindAsync(b => b.Id == id).GetAwaiter().GetResult());
+                                broadcasts = await broadcastRepository.FindRangeAsync(x => ids.Contains(id));
+                                break;
                             }
                         }
                     }
-                    
                     catch (Exception e)
                     {
                         context.Errors.Add(new ExecutionError(e.Message));
                         return default;
                     }
 
-                    var broadcast = await broadcastRepository.FindAsync(x => x.Id == queriedId, context.CancellationToken);
-
-                    if (broadcast != null && broadcast.Expired == true)
+                    if (broadcasts == default)
                     {
-                        response = new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
-                        var error = new ExecutionError(System.Net.HttpStatusCode.NotFound.ToString());
-                        error.Code = "404";
-                        context.Errors.Add(error);
+                        context.Errors.Add(new ExecutionError($"Event containing broadcast {id} was not found"));
                         return default;
                     }
 
-                    if (queriedEvent.Broadcasts == null) return queriedEvent;
-                    
-                    var selectionBroadcasts = queriedEvent.Broadcasts.Select(
-                        async x => new SelectionBroadcast.Broadcast(){
-                            Stability = (float) x.Stability.GetValueOrDefault(),
+                    var selectionBroadcasts = broadcasts.Select(
+                        x => new SelectionBroadcast.Broadcast()
+                        {
+                            Stability = (float)x.Stability.GetValueOrDefault(),
                             Bitrate = x.Bitrate.GetValueOrDefault(),
                             Identifier = x.Id,
                             Ratings = new List<IBroadcastRating>
                             {
-                                new BroadcastRating(RatingPolarity.Positive, ImplicitRatingWeight * (await viewerRepository.FindRangeAsync(v => v.BroadcastId == x.Id))
-                                                                                                                                   .GroupBy(v => v.AccountId)
-                                                                                                                                   .Count(v => v.Count() % 2 != 0)),
                                 new BroadcastRating(RatingPolarity.Positive, ExplicitRatingWeight * x.PositiveRatings.GetValueOrDefault()),
                                 new BroadcastRating(RatingPolarity.Negative, ExplicitRatingWeight * x.NegativeRatings.GetValueOrDefault())
                             }
@@ -173,20 +176,18 @@ namespace Gateway.GraphQL.Queries
                     );
 
                     var epsilon = new EpsilonGreedySelector(
-                        new ExponentialEpsilonComputer(0.15, 0.05), 
+                        new ExponentialEpsilonComputer(0.15, 0.05),
                         new BestBroadcastSelector(),
                         new AutonomousBroadcastSelector()
                     );
 
-                    await Task.WhenAll(selectionBroadcasts);
-                    
-                    var recommended = epsilon.SelectFrom(selectionBroadcasts.Select(t => t.Result).ToList());
-                        
-                    queriedEvent.Recommended = queriedEvent.Broadcasts.SingleOrDefault(
-                        x => x.Id == recommended.Identifier
-                    );
 
-                    return queriedEvent;
+                    var recommended = epsilon.SelectFrom(selectionBroadcasts.ToList());
+
+                    return new Event {
+                        Broadcasts = broadcasts,
+                        Recommended = broadcasts.FirstOrDefault(x => x.Id == recommended.Identifier)
+                    };
                 });
 
         }

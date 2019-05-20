@@ -25,7 +25,16 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var id = context.UserContext.As<UserContext>().User.Identity.Name;
-                    var account = context.GetArgument<Account>("account");
+
+                    var account = await repository.FindAsync(x => x.Id == id);
+
+                    if (account == default) {
+                        context.Errors.Add(new ExecutionError($"Account {id} not found"));
+                        return default;
+                    }
+                        
+                    account = context.GetArgument<Account>("account");
+
                     return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
@@ -44,21 +53,19 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
-                    var account = context.GetArgument<Account>("account");
-                    var identity = context.UserContext.As<UserContext>().User.Identity;
 
-                    if (id != identity.Name)
-                    {
-                        context.Errors.Add(new ExecutionError("Not authorized to update account"));
+                    var account = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+
+                    if (account == default) {
+                        context.Errors.Add(new ExecutionError($"Account {id} not found"));
                         return default;
                     }
 
-                    if (account.Score != default)
+                    var update = context.GetArgument<Account>("account");
+
+                    if (update.Score != default)
                     {
-                        var response = await 
-                            repository.FindAsync(x => x.Id == id, context.CancellationToken);
-                        
-                        account.Score += response.Score;
+                        update.Score += account.Score;
                     }
 
                     return await repository.UpdateAsync(x => x.Id == id, account, context.CancellationToken);

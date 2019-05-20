@@ -45,6 +45,7 @@ namespace Gateway.GraphQL.Mutations
                     // Init the token and activity
                     broadcast.Token = Guid.NewGuid().ToString("N");
                     broadcast.Activity = DateTime.UtcNow;
+                    broadcast.Expired = false;
 
                     // Add the broadcast entity to the database
                     broadcast.AccountId = context.UserContext.As<UserContext>().User.Identity.Name;
@@ -125,16 +126,25 @@ namespace Gateway.GraphQL.Mutations
                     // Validate the account and broadcast
                     var broadcast = await broadcasts.FindAsync(x => x.Id == broadcastId, context.CancellationToken);
 
-                    if (broadcast == null)
+                    if (broadcast == default)
                     {
-                        context.Errors.Add(new ExecutionError("Broadcast not found"));
+                        context.Errors.Add(new ExecutionError($"Broadcast {broadcastId} not found"));
+                        return default;
                     }
 
                     var account = await accounts.FindAsync(x => x.Id == accountId, context.CancellationToken);
 
-                    if (account == null)
+                    if (account == default)
                     {
-                        context.Errors.Add(new ExecutionError("Account not found"));
+                        context.Errors.Add(new ExecutionError($"Account {accountId} not found"));
+                        return default;
+                    }
+
+                    var prev = await viewers.FindRangeAsync(x => x.AccountId == accountId);
+
+                    if (prev.Count() % 2 != 0)
+                    {
+                        return broadcastId;
                     }
 
                     // Construct a viewer entity and add it to the repository
@@ -150,47 +160,6 @@ namespace Gateway.GraphQL.Mutations
                     return broadcastId;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
-
-            this.FieldAsync<BroadcastType>(
-                "addViewers",
-                "(DEBUG) Add viewers to the specified broadcast",
-                arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<IdGraphType>>
-                    {
-                        Name = "id"
-                    },
-                    new QueryArgument<NonNullGraphType<IntGraphType>>
-                    {
-                        Name = "quantity"
-                    }
-                ),
-                resolve: async context =>
-                {
-                    var broadcastId = context.GetArgument<string>("id");
-                    var quantity = context.GetArgument<int>("quantity");
-
-                    var broadcast = await broadcasts.FindAsync(x => x.Id == broadcastId, context.CancellationToken);
-
-                    if (broadcast == null)
-                    {
-                        context.Errors.Add(new ExecutionError("Broadcast not found"));
-                    }
-
-                    for (int i = 0; i < quantity; i++)
-                    {
-                        var viewer = new Viewer
-                        {
-                            AccountId = Guid.NewGuid().ToString("N"),
-                            BroadcastId = broadcastId,
-                            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-                        };
-
-                        await viewers.AddAsync(viewer, context.CancellationToken);
-                    }
-
-                    return broadcast;
-                }
-            );
 
             this.FieldAsync<IdGraphType>(
                 "leave",
@@ -209,16 +178,23 @@ namespace Gateway.GraphQL.Mutations
                     // Validate the account and broadcast
                     var broadcast = await broadcasts.FindAsync(x => x.Id == broadcastId, context.CancellationToken);
 
-                    if (broadcast == null)
+                    if (broadcast == default)
                     {
-                        context.Errors.Add(new ExecutionError("Broadcast not found"));
+                        context.Errors.Add(new ExecutionError($"Broadcast {broadcastId} not found"));
                     }
 
                     var account = await accounts.FindAsync(x => x.Id == accountId, context.CancellationToken);
 
-                    if (account == null)
+                    if (account == default)
                     {
-                        context.Errors.Add(new ExecutionError("Account not found"));
+                        context.Errors.Add(new ExecutionError($"Account {accountId} not found"));
+                    }
+
+                    var prev = await viewers.FindRangeAsync(x => x.AccountId == accountId);
+
+                    if (prev.Count() % 2 == 0)
+                    {
+                        return broadcastId;
                     }
 
                     // Construct a viewer entity and add it to the repository
@@ -258,7 +234,7 @@ namespace Gateway.GraphQL.Mutations
                     // Inform the user if the id is invalid
                     if (broadcast == default)
                     {
-                        context.Errors.Add(new ExecutionError("Invalid broadcast id"));
+                        context.Errors.Add(new ExecutionError($"Broadcast {id} not found"));
                         return default;
                     }
 
@@ -292,25 +268,26 @@ namespace Gateway.GraphQL.Mutations
                 resolve: async context =>
                 {
                     var id = context.GetArgument<string>("id");
+                    var broadcast = await broadcasts.FindAsync(x => x.Id == id);
 
                     // Validate the broadcast
-                    if (await broadcasts.FindAsync(x => x.Id == id) == null)
+                    if (broadcast == default)
                     {
-                        context.Errors.Add(new ExecutionError("Broadcast not found."));
+                        context.Errors.Add(new ExecutionError($"Broadcast {id} not found."));
                         return default;
                     }
 
-                    var broadcast = context.GetArgument<Broadcast>("broadcast");
+                    var update = context.GetArgument<Broadcast>("broadcast");
 
                     // Check if the location was changed
-                    var locationUpdated = broadcast.Location != null;
+                    var locationUpdated = update.Location != default;
 
                     if (context.GetArgument<bool>("activity"))
                     {
-                        broadcast.Activity = DateTime.UtcNow;
+                        update.Activity = DateTime.UtcNow;
                     }
 
-                    broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
+                    broadcast = await broadcasts.UpdateAsync(x => x.Id == id, update, context.CancellationToken);
 
                     if (locationUpdated)
                     {
@@ -358,35 +335,35 @@ namespace Gateway.GraphQL.Mutations
                     // Get broadcast 
                     var broadcast = await broadcasts.FindAsync(x => x.Id == id, context.CancellationToken);
 
-                    // Ensure only broadcaster can stop broadcast
-                    if (broadcast.AccountId != identity.Name)
+                    if (broadcast == default)
                     {
-                        context.Errors.Add(new ExecutionError("Not authorized to stop broadcast"));
+                        context.Errors.Add(new ExecutionError($"Broadcast {id} not found."));
                         return default;
                     }
 
-                    // Get viewers to calculate score
-                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
-                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast.Activity);
-                    broadcast.Score = score;
-
-                    // Set expired to true
+                    
                     broadcast.Expired = true;
+                    broadcast.Activity = DateTime.UtcNow;
+
                     broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
-                    // Update account
-                    var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);                  
                     
-                    if (account != null) 
+                    var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
+
+                    if (account == default)
                     {
-                        var accountScore = account.Score;
-
-                        if (accountScore == null) accountScore = 0;
-
-                        account.Score = score + accountScore;
-                        
-                        await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
+                        context.Errors.Add(new ExecutionError($"Account {identity.Name} not found"));
+                        return default;
                     }
+
+                    // Update score
+                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
+                    
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast.Activity);
+
+                    account.Score = (account.Score ?? 0) + score;
+
+                    await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
 
                     var dto = new
                     {
