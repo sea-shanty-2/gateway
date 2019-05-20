@@ -117,8 +117,6 @@ namespace Gateway.GraphQL.Queries
                     if (broadcast.Expired == true)
                     {
                         await client.PostAsJsonAsync("/data/remove", new { id = id });
-                        context.Errors.Add(new ExecutionError($"Broadcast {id} marked as expired"));
-                        return default;
                     }
 
                     var response = await client.GetAsync("clustering/events", context.CancellationToken);
@@ -144,7 +142,7 @@ namespace Gateway.GraphQL.Queries
 
                             if (ids.Contains(id))
                             {
-                                broadcasts = await broadcastRepository.FindRangeAsync(x => ids.Contains(id));
+                                broadcasts = await broadcastRepository.FindRangeAsync(x => x.Expired != true && ids.Contains(id));
                                 break;
                             }
                         }
@@ -155,7 +153,7 @@ namespace Gateway.GraphQL.Queries
                         return default;
                     }
 
-                    if (broadcasts == default)
+                    if (broadcasts == default || !broadcasts.Any())
                     {
                         context.Errors.Add(new ExecutionError($"Event containing broadcast {id} was not found"));
                         return default;
