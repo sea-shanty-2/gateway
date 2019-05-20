@@ -376,10 +376,11 @@ namespace Gateway.GraphQL.Mutations
                     if (account != null) 
                     {
                         var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+                        var accountScore = account.Score;
 
-                        if (account.Score == null) account.Score = 0;
+                        if (accountScore == null) accountScore = 0;
 
-                        account.Score += score;
+                        account.Score = score + accountScore;
                         
                         await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
                     }
