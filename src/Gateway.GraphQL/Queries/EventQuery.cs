@@ -17,6 +17,7 @@ using EnvueStreamSelection.Broadcast.Rating;
 using EnvueStreamSelection;
 using EnvueStreamSelection.Selector.EpsilonGreedy;
 using EnvueStreamSelection.Selector.Autonomous;
+using System.Net;
 
 namespace Gateway.GraphQL.Queries
 {

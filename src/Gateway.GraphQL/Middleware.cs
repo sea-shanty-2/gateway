@@ -95,8 +95,7 @@ namespace Gateway.GraphQL
                 _.Inputs = request?.Variables.ToInputs();
                 _.UserContext = new UserContext
                 {
-                    User = context.User,
-                    Headers = context.Request.Headers
+                    User = context.User
                 };
                 _.FieldMiddleware.Use<InstrumentFieldsMiddleware>();
                 _.ValidationRules = DocumentValidator.CoreRules().Concat(_rules);
