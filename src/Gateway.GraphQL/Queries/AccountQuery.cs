@@ -23,7 +23,12 @@ namespace Gateway.GraphQL.Queries
                 resolve: async context =>
                 {
                     var identity = context.UserContext.As<UserContext>().User.Identity;
-                    return await repository.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
+                    var account = await repository.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
+
+                    if (account == null)
+                        context.Errors.Add(new ExecutionError($"Account {identity.Name} not found"));
+                    
+                    return account;
                 }
             ).AuthorizeWith("AuthenticatedPolicy");
 
@@ -38,9 +43,13 @@ namespace Gateway.GraphQL.Queries
                     }),
                 resolve: async context =>
                 {
-
                     var id = context.GetArgument<string>("id");
-                    return await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                    var account = await repository.FindAsync(x => x.Id == id, context.CancellationToken);
+                    
+                    if (account == null)
+                        context.Errors.Add(new ExecutionError($"Account {id} not found"));
+
+                    return account;
                 });
 
             this.Connection<AccountType>()
