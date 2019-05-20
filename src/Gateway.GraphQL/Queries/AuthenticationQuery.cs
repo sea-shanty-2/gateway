@@ -45,20 +45,30 @@ namespace Gateway.GraphQL.Queries
                     };
                     var accessToken = context.GetArgument<string>("token");
                     var response = await client.GetAsync($"me?access_token={accessToken}&fields=id");
+                    var content = await response.Content.ReadAsStringAsync();
 
-                    if (!response.IsSuccessStatusCode)
+                    if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        /// TODO: Deserialize JSON and instantiate execution error properly.
-                        /// https://graphql.org/learn/validation/ 
-                        var error = await response.Content.ReadAsStringAsync();
-                        context.Errors.Add(new ExecutionError("error"));
+                        context.Errors.Add(new ExecutionError(
+                            $"Error fetching data from Facebook for access token {accessToken}.\n" +
+                            $"Facebook responded with {content}"));
+
                         return default;
                     }
 
                     var fbid = JsonConvert
-                        .DeserializeObject<JObject>(await response.Content.ReadAsStringAsync())
-                        .GetValue("id")
-                        .ToString();
+                        .DeserializeObject<JObject>(content)
+                        .Value<string>("id");
+
+                    if (fbid == null)
+                    {
+                        context.Errors.Add(new ExecutionError(
+                            "Expected Facebook to return an account id.\n" +
+                            $"Got {content}"
+                        ));
+
+                        return default;
+                    }
 
                     // Check if user account exists for the given facebook id
                     var account = await repository.FindAsync(x => x.FacebookId == fbid, context.CancellationToken);
