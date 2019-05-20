@@ -340,17 +340,14 @@ namespace Gateway.GraphQL.Mutations
                         context.Errors.Add(new ExecutionError($"Broadcast {id} not found."));
                         return default;
                     }
-                    
-                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
 
+                    
                     broadcast.Expired = true;
                     broadcast.Activity = DateTime.UtcNow;
-                    broadcast.Score = score;
 
                     broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
-                    // Update score
-                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
+                    
                     var account = await accounts.FindAsync(x => x.Id == identity.Name, context.CancellationToken);
 
                     if (account == default)
@@ -358,6 +355,11 @@ namespace Gateway.GraphQL.Mutations
                         context.Errors.Add(new ExecutionError($"Account {identity.Name} not found"));
                         return default;
                     }
+
+                    // Update score
+                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id, context.CancellationToken);
+                    
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
 
                     account.Score = (account.Score ?? 0) + score;
 
