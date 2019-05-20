@@ -99,21 +99,25 @@ namespace Gateway.GraphQL.Services
                 
                 if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NotFound)
                 {
+                    // Calculate score
+                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id);
+                    var date = DateTime.UtcNow;
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, date);
+                    
                     var broadcast = await repository.UpdateAsync(
                         x => x.Id == id,
-                        new Broadcast { Expired = true, Activity = DateTime.UtcNow });
+                        new Broadcast { Expired = true, Activity = DateTime.UtcNow , Score = score });
 
-                    // Update score
-                    var viewerResponse = await viewers.FindRangeAsync(x => x.BroadcastId == id);
+                    // Update account score
                     var account = await accounts.FindAsync(x => x.Id == broadcast.AccountId);
 
                     if (account != null) 
                     {
-                        var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
+                        var accountScore = account.Score;
 
-                        if (account.Score == null) account.Score = 0;
+                        if (accountScore == null) accountScore = 0;
 
-                        account.Score += score;
+                        account.Score = score + accountScore;
                         
                         await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
                     }

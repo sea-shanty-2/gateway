@@ -340,9 +340,12 @@ namespace Gateway.GraphQL.Mutations
                         context.Errors.Add(new ExecutionError($"Broadcast {id} not found."));
                         return default;
                     }
+                    
+                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
 
                     broadcast.Expired = true;
                     broadcast.Activity = DateTime.UtcNow;
+                    broadcast.Score = score;
 
                     broadcast = await broadcasts.UpdateAsync(x => x.Id == id, broadcast, context.CancellationToken);
 
@@ -356,7 +359,6 @@ namespace Gateway.GraphQL.Mutations
                         return default;
                     }
 
-                    var score = BroadcastUtility.CalculateScore(viewerResponse, broadcast);
                     account.Score = (account.Score ?? 0) + score;
 
                     await accounts.UpdateAsync(x => x.Id == broadcast.AccountId, account);
