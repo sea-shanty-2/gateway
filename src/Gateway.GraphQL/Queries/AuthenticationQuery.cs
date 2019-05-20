@@ -44,15 +44,12 @@ namespace Gateway.GraphQL.Queries
                         BaseAddress = new Uri("https://graph.facebook.com/v3.2/")
                     };
                     var accessToken = context.GetArgument<string>("token");
-                    var response = await client.GetAsync($"me?access_token={accessToken}&fields=id");
+                    var response = await client.GetAsync($"me?access_token={accessToken}&fields=id", context.CancellationToken);
                     var content = await response.Content.ReadAsStringAsync();
 
-                    if (response.StatusCode != HttpStatusCode.OK)
+                    if (!response.IsSuccessStatusCode)
                     {
-                        context.Errors.Add(new ExecutionError(
-                            $"Error fetching data from Facebook for access token {accessToken}.\n" +
-                            $"Facebook responded with {content}"));
-
+                        context.Errors.Add(new ExecutionError(response.ReasonPhrase));
                         return default;
                     }
 
